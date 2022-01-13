@@ -45,6 +45,7 @@ import {
   increment,
   deleteDoc,
 } from 'firebase/firestore'
+import Signout from './components/Signout'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
@@ -194,7 +195,16 @@ export default function App() {
               />
             )}
           </Stack.Screen>
-          <Stack.Screen name="Home" options={{ headerShown: false }}>
+          <Stack.Screen
+            name="Home"
+            options={{
+              headerShown: true,
+              headerTitle: 'Home',
+              headerRight: (props) => (
+                <Signout {...props} handler={SignoutHandler} user={user} />
+              ),
+            }}
+          >
             {(props) => <HomeScreen {...props} auth={auth} />}
           </Stack.Screen>
         </Stack.Navigator>
