@@ -61,16 +61,6 @@ const LoginScreen = (props) => {
                     activeOutlineColor="#0071c2"
                     onChangeText={(text) => setPassword(text)}
                 />
-                <View style={styles.forgotArea}>
-                    <Text
-                        style={styles.forgotPassword}
-                        onPress={() => {
-                            navigation.navigate('ForgotPassword')
-                        }}
-                    >
-                        Forgot password?
-                    </Text>
-                </View>
             </View>
 
             <View style={styles.signinButtonArea}>
@@ -83,16 +73,54 @@ const LoginScreen = (props) => {
                 >
                     {loginText}
                 </Button>
+                <View style={styles.forgotArea}>
+                    <Text
+                        style={styles.forgotPassword}
+                        onPress={() => {
+                            navigation.navigate('ForgotPassword')
+                        }}
+                    >
+                        Forgot password?
+                    </Text>
+                </View>
+            </View>
+            <View style={styles.orArea}>
+                <View style={styles.orLine} />
+                <Text style={styles.or}>OR</Text>
+                <View style={styles.orLine} />
+            </View>
+            <View style={styles.socialButtonArea}>
                 <Button
-                    style={{ width: '70%' }}
+                    mode="text"
+                    contentStyle={styles.socialButtonContent}
                     color="#000"
-                    accessibilityLabel="Register"
-                    mode="outlined"
-                    onPress={() => navigation.navigate('Register')}
+                    uppercase={false}
+                    style={styles.socialButton}
+                    icon={require('../assets/facebook.png')}
                 >
-                    CREATE AN ACCOUNT
+                    Continue with Facebook
+                </Button>
+                <Button
+                    mode="text"
+                    color="#000"
+                    uppercase={false}
+                    style={styles.socialButton}
+                    icon={require('../assets/google.png')}
+                >
+                    Continue with Google
                 </Button>
             </View>
+
+            <Button
+                style={{ width: '100%' }}
+                mode="text"
+                uppercase={false}
+                color="#000"
+                accessibilityLabel="Register"
+                onPress={() => navigation.navigate('Register')}
+            >
+                Don't have an account? Sign up.
+            </Button>
         </View>
     )
 }
@@ -112,7 +140,7 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         width: '100%',
-        maxHeight: '20%',
+        maxHeight: '15%',
     },
     signinArea: {
         alignItems: 'center',
@@ -131,12 +159,10 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     signinButtonArea: {
-        flex: 1,
         alignItems: 'center',
         justifyContent: 'flex-start',
         width: '100%',
-        maxHeight: '20%',
-        marginTop: '20%',
+        marginBottom: 20,
     },
     buttons: {
         width: '70%',
@@ -154,13 +180,6 @@ const styles = StyleSheet.create({
     signinButton: {
         backgroundColor: '#1DC7DE',
     },
-    buttonText: {
-        fontSize: 15,
-        fontWeight: 'bold',
-        color: '#000',
-        textAlign: 'center',
-        paddingTop: 8,
-    },
     error: {
         color: 'red',
         fontSize: 15,
@@ -177,5 +196,34 @@ const styles = StyleSheet.create({
         alignItems: 'flex-end',
         justifyContent: 'flex-end',
         width: '70%',
+    },
+    orArea: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '70%',
+    },
+    or: {
+        fontSize: 15,
+        fontWeight: 'bold',
+        color: '#000',
+        paddingHorizontal: 10,
+    },
+    orLine: {
+        backgroundColor: '#000',
+        height: 1,
+        flex: 1,
+    },
+    socialButtonArea: {
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        width: '60%',
+        marginBottom: 20,
+    },
+    socialButton: {
+        marginBottom: 10,
+    },
+    socialButtonContent: {
+        fontSize: 15,
     },
 })
