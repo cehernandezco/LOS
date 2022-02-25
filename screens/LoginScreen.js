@@ -92,7 +92,7 @@ const LoginScreen = (props) => {
             <View style={styles.socialButtonArea}>
                 <Button
                     mode="text"
-                    contentStyle={styles.socialButtonContent}
+                    labelStyle={styles.socialButtonLabel}
                     color="#000"
                     uppercase={false}
                     style={styles.socialButton}
@@ -102,6 +102,7 @@ const LoginScreen = (props) => {
                 </Button>
                 <Button
                     mode="text"
+                    labelStyle={styles.socialButtonLabel}
                     color="#000"
                     uppercase={false}
                     style={styles.socialButton}
@@ -217,13 +218,14 @@ const styles = StyleSheet.create({
     socialButtonArea: {
         alignItems: 'flex-start',
         justifyContent: 'center',
-        width: '60%',
+        width: '75%',
         marginBottom: 20,
     },
     socialButton: {
         marginBottom: 10,
     },
-    socialButtonContent: {
-        fontSize: 15,
+    socialButtonLabel: {
+        fontSize: 18,
+        fontWeight: 'bold',
     },
 })
