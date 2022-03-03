@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import {
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    Alert,
+    Image,
+} from 'react-native'
 import { Button, TextInput as TextInputCustom } from 'react-native-paper'
 import Constants from 'expo-constants'
 import { useNavigation } from '@react-navigation/native'
@@ -8,22 +16,27 @@ const LoginScreen = (props) => {
     const navigation = useNavigation()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-    const [loginText, setLoginText] = useState('LOGIN')
+    const [loginText, setLoginText] = useState('LOG IN')
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
-        if (props.auth === true) {
+        if (props.auth && !props.user) {
+            navigation.reset({
+                index: 0,
+                routes: [{ name: 'RegisterGoogle' }],
+            })
+        } else if (props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
         }
     }, [props.auth])
 
+    useEffect(() => {
+        props.error ? Alert.alert('Error Login', props.error) : null
+    }, [props.error])
+
     const handleSignin = () => {
         if (email === '' || password === '') {
-            setError('Please fill all fields')
-            setTimeout(() => {
-                setError('')
-            }, 3000)
+            Alert.alert('Error Login', 'Please fill all fields!')
         } else {
             setTimeout(() => {
                 setLoginText('LOGIN')
@@ -36,93 +49,108 @@ const LoginScreen = (props) => {
     }
 
     return (
-        <View style={styles.container}>
-            <View style={styles.header}></View>
-            <View style={styles.signinArea}>
-                <Text style={styles.signinTitle}>LOS LOGO</Text>
-                <Text style={styles.error}>{error || props.error}</Text>
-                <TextInputCustom
-                    placeholder="Type email"
-                    label="Email address"
-                    mode="outlined"
-                    autoComplete="email"
-                    activeOutlineColor="#0071c2"
-                    onChangeText={(text) => setEmail(text)}
-                    style={styles.signinInput}
-                />
-                <TextInputCustom
-                    style={styles.signinInput}
-                    label="Password"
-                    mode="outlined"
-                    placeholder="Type Password"
-                    secureTextEntry={true}
-                    textContentType="password"
-                    autoComplete="password"
-                    activeOutlineColor="#0071c2"
-                    onChangeText={(text) => setPassword(text)}
-                />
-            </View>
-
-            <View style={styles.signinButtonArea}>
-                <Button
-                    style={styles.buttons}
-                    accessibilityLabel="Login"
-                    loading={loading}
-                    mode="contained"
-                    onPress={() => handleSignin()}
-                >
-                    {loginText}
-                </Button>
-                <View style={styles.forgotArea}>
-                    <Text
-                        style={styles.forgotPassword}
-                        onPress={() => {
-                            navigation.navigate('ForgotPassword')
-                        }}
-                    >
-                        Forgot password?
-                    </Text>
+        <SafeAreaView style={styles.container}>
+            <ScrollView>
+                <View style={styles.header} />
+                <View style={styles.signinArea}>
+                    <Image
+                        style={styles.logo}
+                        source={require('../assets/los_logo.png')}
+                    />
+                    <TextInputCustom
+                        placeholder="Type email"
+                        label="Email address"
+                        mode="outlined"
+                        autoComplete="email"
+                        activeOutlineColor="#0071c2"
+                        onChangeText={(text) => setEmail(text)}
+                        style={styles.signinInput}
+                    />
+                    <TextInputCustom
+                        style={styles.signinInput}
+                        label="Password"
+                        mode="outlined"
+                        placeholder="Type Password"
+                        secureTextEntry={true}
+                        textContentType="password"
+                        autoComplete="password"
+                        activeOutlineColor="#0071c2"
+                        onChangeText={(text) => setPassword(text)}
+                    />
                 </View>
-            </View>
-            <View style={styles.orArea}>
-                <View style={styles.orLine} />
-                <Text style={styles.or}>OR</Text>
-                <View style={styles.orLine} />
-            </View>
-            <View style={styles.socialButtonArea}>
-                <Button
-                    mode="text"
-                    labelStyle={styles.socialButtonLabel}
-                    color="#000"
-                    uppercase={false}
-                    style={styles.socialButton}
-                    icon={require('../assets/facebook.png')}
-                >
-                    Continue with Facebook
-                </Button>
-                <Button
-                    mode="text"
-                    labelStyle={styles.socialButtonLabel}
-                    color="#000"
-                    uppercase={false}
-                    style={styles.socialButton}
-                    icon={require('../assets/google.png')}
-                >
-                    Continue with Google
-                </Button>
-            </View>
 
-            <Button
-                style={{ width: '100%' }}
-                mode="text"
-                uppercase={false}
-                color="#000"
-                accessibilityLabel="Register"
-                onPress={() => navigation.navigate('Register')}
-            >
-                Don't have an account? Sign up.
-            </Button>
-        </View>
+                <View style={styles.signinButtonArea}>
+                    <Button
+                        style={[styles.buttons, styles.signinButton]}
+                        labelStyle={styles.signinText}
+                        accessibilityLabel="Login"
+                        loading={loading}
+                        mode="contained"
+                        onPress={() => handleSignin()}
+                    >
+                        {loginText}
+                    </Button>
+                    <View style={styles.forgotArea}>
+                        <Text
+                            style={styles.forgotPassword}
+                            onPress={() => {
+                                navigation.navigate('ForgotPassword')
+                            }}
+                        >
+                            Forgot password?
+                        </Text>
+                    </View>
+                </View>
+
+                <View style={styles.bottomArea}>
+                    <View style={styles.orArea}>
+                        <View style={styles.orLine} />
+                        <Text style={styles.or}>OR</Text>
+                        <View style={styles.orLine} />
+                    </View>
+                    <View style={styles.socialButtonArea}>
+                        <Button
+                            mode="contained"
+                            labelStyle={[styles.socialButtonLabel]}
+                            color="#000"
+                            uppercase={false}
+                            style={[styles.socialButton, styles.signinButton]}
+                            icon={require('../assets/facebook.png')}
+                        >
+                            Continue with Facebook
+                        </Button>
+                        <Button
+                            mode="contained"
+                            labelStyle={styles.socialButtonLabel}
+                            color="#000"
+                            uppercase={false}
+                            style={[
+                                styles.socialButton,
+                                styles.signinButton,
+                                { paddingRight: 24 },
+                            ]}
+                            icon={require('../assets/google.png')}
+                            onPress={() => props.googleLogin()}
+                        >
+                            Continue with Google
+                        </Button>
+                    </View>
+                </View>
+
+                <Button
+                    style={{
+                        width: '100%',
+                    }}
+                    mode="text"
+                    uppercase={false}
+                    color="#000"
+                    accessibilityLabel="Register"
+                    onPress={() => navigation.navigate('Register')}
+                >
+                    Don't have an account? Sign up.
+                </Button>
+            </ScrollView>
+        </SafeAreaView>
     )
 }
 
@@ -131,33 +159,37 @@ export default LoginScreen
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#c7d8e6',
+        backgroundColor: '#FFF',
         alignItems: 'center',
         marginTop: Constants.statusBarHeight,
     },
     header: {
         flex: 1,
-        backgroundColor: '#c7d8e6',
+        backgroundColor: '#FFF',
         alignItems: 'flex-start',
         justifyContent: 'flex-start',
         width: '100%',
-        maxHeight: '15%',
+        maxHeight: '13%',
     },
     signinArea: {
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
     },
-    signinTitle: {
-        fontSize: 25,
-        fontWeight: 'bold',
-        color: '#000',
-        marginBottom: 65,
+    logo: {
+        width: 320,
+        height: 156,
+        marginBottom: '5%',
+        marginTop: '5%',
     },
     signinInput: {
-        width: '70%',
+        width: '85%',
         paddingLeft: 10,
         marginBottom: 20,
+    },
+    signinText: {
+        color: '#FFF',
+        fontSize: 18,
     },
     signinButtonArea: {
         alignItems: 'center',
@@ -166,7 +198,7 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     buttons: {
-        width: '70%',
+        width: '85%',
         height: 40,
         marginBottom: 10,
         shadowColor: '#000',
@@ -179,24 +211,22 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     signinButton: {
-        backgroundColor: '#1DC7DE',
-    },
-    error: {
-        color: 'red',
-        fontSize: 15,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        paddingTop: 8,
+        backgroundColor: '#2D71B6',
     },
     forgotPassword: {
         fontSize: 15,
         fontWeight: 'bold',
-        color: '#1A73E9',
+        color: '#2D71B6',
     },
     forgotArea: {
         alignItems: 'flex-end',
         justifyContent: 'flex-end',
         width: '70%',
+    },
+    bottomArea: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     orArea: {
         flexDirection: 'row',
@@ -216,16 +246,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     socialButtonArea: {
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'center',
-        width: '75%',
-        marginBottom: 20,
+        width: '85%',
+        marginTop: 20,
     },
     socialButton: {
         marginBottom: 10,
     },
     socialButtonLabel: {
         fontSize: 18,
-        fontWeight: 'bold',
     },
 })

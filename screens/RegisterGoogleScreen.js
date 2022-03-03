@@ -1,19 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { StyleSheet, Text, View, Keyboard } from 'react-native'
 import { Button, TextInput } from 'react-native-paper'
 import DateTimePicker from '@react-native-community/datetimepicker'
+//Signout module
+import Signout from '../components/Signout'
 
-const RegisterScreen = (props) => {
-    const [firstName, setFirstName] = useState('')
-    const [lastName, setLastName] = useState('')
-    const [email, setEmail] = useState('')
+import { useNavigation } from '@react-navigation/native'
+
+const RegisterGoogleScreen = (props) => {
+    const navigation = useNavigation()
+    const nameProps = props.user?.displayName.split(' ') || ''
+    const [firstName, setFirstName] = useState(nameProps[0] || '')
+    const [lastName, setLastName] = useState(nameProps[1] || '')
+    const [email, setEmail] = useState(props.user?.email || '')
     const [dob, setDob] = useState(new Date())
-    const [password, setPassword] = useState('')
-    const [phoneNumber, setPhoneNumber] = useState('')
+    const [phoneNumber, setPhoneNumber] = useState(
+        props.user?.phoneNumber || ''
+    )
     const [show, setShow] = useState(false)
     const [error, setError] = useState('')
-    const [registerText, setRegisterText] = useState('REGISTER')
+    const [registerText, setRegisterText] = useState('SAVE')
     const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        if (!props.auth) {
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        }
+    }, [props.auth])
 
     //Formatted date with full to print in the input field
     const formatDate = (date) => {
@@ -31,8 +44,6 @@ const RegisterScreen = (props) => {
             lastName === '' ||
             email === undefined ||
             email === '' ||
-            password === undefined ||
-            password === '' ||
             phoneNumber === undefined ||
             phoneNumber === ''
         ) {
@@ -50,7 +61,7 @@ const RegisterScreen = (props) => {
 
         setLoading(true)
         setRegisterText('Registering...')
-        props.handler(email, password, firstName, lastName, dob, phoneNumber)
+        props.handler(email, firstName, lastName, dob, phoneNumber)
     }
 
     const onChange = (event, selectedDate) => {
@@ -70,7 +81,9 @@ const RegisterScreen = (props) => {
                     onChange={onChange}
                 />
             )}
+
             <View style={styles.inputsContainer}>
+                <Text style={styles.title}>Register</Text>
                 <TextInput
                     placeholder="Type Email"
                     label="Email address"
@@ -121,37 +134,33 @@ const RegisterScreen = (props) => {
                     textContentType="telephoneNumber"
                     autoComplete="tel"
                 />
-
-                <TextInput
-                    placeholder="Type Password"
-                    label="Password"
-                    mode="outlined"
-                    onChangeText={(text) => setPassword(text)}
-                    value={password}
-                    secureTextEntry={true}
-                />
             </View>
 
             <View style={styles.buttonContainer}>
                 <Text style={styles.error}>{error || props.error}</Text>
                 <Button
                     style={styles.button}
-                    labelStyle={styles.buttonText}
                     accessibilityLabel="Register"
+                    labelStyle={styles.buttonLabel}
                     mode="contained"
                     loading={loading}
                     onPress={() =>
-                        handlerSignUp(email, password, firstName, lastName, dob)
+                        handlerSignUp(email, firstName, lastName, dob)
                     }
                 >
                     {registerText}
                 </Button>
+                <Signout
+                    {...props}
+                    handler={props.signoutHandler}
+                    user={props.user}
+                />
             </View>
         </View>
     )
 }
 
-export default RegisterScreen
+export default RegisterGoogleScreen
 
 const styles = StyleSheet.create({
     container: {
@@ -164,6 +173,13 @@ const styles = StyleSheet.create({
         flex: 1,
         width: '90%',
         marginTop: 30,
+    },
+    title: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        marginBottom: 40,
+        marginTop: 20,
+        color: '#2D71B6',
     },
     input: {
         width: '90%',
@@ -192,7 +208,7 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
     },
-    buttonText: {
+    buttonLabel: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#FFF',
