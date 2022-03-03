@@ -1,7 +1,11 @@
 //Avoid warning message for AsyncStorage and setTimer
-import { LogBox } from 'react-native'
+import { LogBox, Platform } from 'react-native'
+LogBox.ignoreLogs([
+    `AsyncStorage has been extracted from react-native core and will be removed in a future release. It can now be installed and imported from '@react-native-async-storage/async-storage' instead of 'react-native'. See https://github.com/react-native-async-storage/async-storage`,
+])
+LogBox.ignoreLogs(['Linking requires a build-time setting'])
+
 LogBox.ignoreLogs(['Setting a timer'])
-LogBox.ignoreLogs(['AsyncStorage'])
 
 import { StatusBar } from 'expo-status-bar'
 //Navigation component
@@ -14,9 +18,9 @@ import HomeScreen from './screens/HomeScreen'
 import LoginScreen from './screens/LoginScreen'
 import SplashScreen from './screens/SplashScreen'
 import RegisterScreen from './screens/RegisterScreen'
+import RegisterGoogleScreen from './screens/RegisterGoogleScreen'
 //React
 import React, { useState, useEffect } from 'react'
-
 //firebase
 import { firebaseConfig } from './FirebaseConfig'
 import { initializeApp } from 'firebase/app'
@@ -27,34 +31,27 @@ import {
     signInWithEmailAndPassword,
     signOut,
     sendPasswordResetEmail,
+    GoogleAuthProvider,
+    signInWithCredential,
 } from 'firebase/auth'
+import { initializeFirestore, setDoc, doc, getDoc } from 'firebase/firestore'
+//Google signin
+import * as Google from 'expo-auth-session/providers/google'
+import * as WebBrowser from 'expo-web-browser'
 
-import {
-    initializeFirestore,
-    setDoc,
-    doc,
-    addDoc,
-    getDoc,
-    collection,
-    query,
-    where,
-    onSnapshot,
-    updateDoc,
-    arrayUnion,
-    arrayRemove,
-    increment,
-    deleteDoc,
-} from 'firebase/firestore'
+WebBrowser.maybeCompleteAuthSession()
+
+//Signout module
 import Signout from './components/Signout'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
-
+//Firebase initialization
 const app = initializeApp(firebaseConfig)
 const db = initializeFirestore(app, { useFetchStreams: false })
 const FBauth = getAuth()
 
-//Generl theme
+//General theme
 const theme = {
     ...DefaultTheme,
     roundness: 6,
@@ -68,21 +65,63 @@ const theme = {
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
+    const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
 
+    console.log('userGoogle', userGoogle)
+
+    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+        androidClientId: process.env.ANDROID_ID,
+        iosClientId: process.env.IOS_ID,
+        expoClientId: process.env.WEB_ID,
+    })
+    //Listener for authentication state
     useEffect(() => {
-        onAuthStateChanged(FBauth, (user) => {
-            if (user) {
-                setAuth(true)
-                setUser(user)
+        onAuthStateChanged(FBauth, async (userAuth) => {
+            if (userAuth) {
+                const docRef = doc(db, 'Users', userAuth.uid)
+                const docSnap = await getDoc(docRef)
+                if (docSnap.exists()) {
+                    if (user === undefined) {
+                        setUser(docSnap.data())
+                        console.log('User found and saved')
+                        setAuth(true)
+                    }
+                } else {
+                    setAuth(true)
+                    console.log('No such document!')
+                }
             } else {
                 setAuth(false)
                 setUser(null)
             }
         })
-    })
+    }, [onAuthStateChanged])
+    // UseEffect to listen the google auth response to the signin
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { id_token } = response.params
 
+            const credential = GoogleAuthProvider.credential(id_token)
+            signInWithCredential(FBauth, credential)
+                .then(() => {
+                    console.log('User signed in with Google!')
+                    console.log('User', FBauth.currentUser)
+                    setUserGoogle(FBauth.currentUser)
+                })
+                .catch((error) => {
+                    const errorCode = error.code
+                    const errorMessage = error.message
+                    const email = error.email
+                    console.log(errorCode, errorMessage, email)
+                    const credential =
+                        GoogleAuthProvider.credentialFromError(error)
+                })
+        }
+    }, [response])
+
+    //Function to signup with email
     const SignupHandler = (
         email,
         password,
@@ -116,12 +155,32 @@ export default function App() {
             })
     }
 
+    //Function to signup with Google
+    const SignupGoogleHandler = (
+        email,
+        firstName,
+        lastName,
+        dob,
+        phoneNumber
+    ) => {
+        setDoc(doc(db, 'Users', FBauth.currentUser.uid), {
+            email: email,
+            firstname: firstName,
+            lastname: lastName,
+            dob: dob,
+            phoneNumber: phoneNumber,
+            admin: false,
+            guardian: false,
+            elderly: false,
+        })
+    }
+
+    //Function to signin with email
     const SigninHandler = (email, password) => {
         signInWithEmailAndPassword(FBauth, email, password)
             .then(() => {
                 setUser(FBauth.currentUser.user)
                 setAuth(true)
-                // console.log(FBauth.currentUser.uid)
             })
             .catch((error) => {
                 const message = error.code.includes('/')
@@ -134,6 +193,7 @@ export default function App() {
             })
     }
 
+    //Function to signout
     const SignoutHandler = () => {
         signOut(FBauth)
             .then(() => {
@@ -143,6 +203,7 @@ export default function App() {
             .catch((error) => console.log(error.code))
     }
 
+    //Function to reset password
     const resetPassword = (email) => {
         sendPasswordResetEmail(FBauth, email)
             .then(() => {
@@ -159,33 +220,36 @@ export default function App() {
             })
     }
 
+    //Function to login/signup with Google
+    const googleLogin = () => {
+        promptAsync()
+    }
+
     return (
         <PaperProvider theme={theme}>
             <NavigationContainer>
                 <Stack.Navigator>
+                    {/* Splash screen */}
                     <Stack.Screen
                         name="Splash"
                         options={{ headerShown: false }}
                     >
-                        {(props) => (
-                            <SplashScreen
-                                {...props}
-                                auth={auth}
-                                error={signinError}
-                                handler={SigninHandler}
-                            />
-                        )}
+                        {(props) => <SplashScreen {...props} auth={auth} />}
                     </Stack.Screen>
+                    {/* Login screen */}
                     <Stack.Screen name="Login" options={{ headerShown: false }}>
                         {(props) => (
                             <LoginScreen
                                 {...props}
                                 auth={auth}
+                                user={user}
                                 error={signinError}
                                 handler={SigninHandler}
+                                googleLogin={googleLogin}
                             />
                         )}
                     </Stack.Screen>
+                    {/* Register screen */}
                     <Stack.Screen
                         name="Register"
                         options={{
@@ -206,6 +270,23 @@ export default function App() {
                             />
                         )}
                     </Stack.Screen>
+                    {/* Register Google screen */}
+                    <Stack.Screen
+                        name="RegisterGoogle"
+                        options={{ headerShown: false }}
+                    >
+                        {(props) => (
+                            <RegisterGoogleScreen
+                                {...props}
+                                auth={auth}
+                                user={userGoogle}
+                                error={signupError}
+                                handler={SignupGoogleHandler}
+                                signoutHandler={SignoutHandler}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* Home screen */}
                     <Stack.Screen
                         name="Home"
                         options={{
@@ -220,7 +301,9 @@ export default function App() {
                             ),
                         }}
                     >
-                        {(props) => <HomeScreen {...props} auth={auth} />}
+                        {(props) => (
+                            <HomeScreen {...props} auth={auth} user={user} />
+                        )}
                     </Stack.Screen>
                 </Stack.Navigator>
                 <StatusBar style="auto" />
