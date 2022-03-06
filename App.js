@@ -43,6 +43,7 @@ WebBrowser.maybeCompleteAuthSession()
 
 //Signout module
 import Signout from './components/Signout'
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
@@ -68,6 +69,9 @@ export default function App() {
     const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
+    const [forgotPasswordError, setForgotPasswordError] = useState()
+    const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState()
+    
 
     console.log('userGoogle', userGoogle)
 
@@ -213,6 +217,7 @@ export default function App() {
                 }, 3000)
             })
             .catch((error) => {
+                console.log(error.code)
                 setForgotPasswordError(error.code)
                 setTimeout(() => {
                     setForgotPasswordError('')
@@ -283,6 +288,28 @@ export default function App() {
                                 error={signupError}
                                 handler={SignupGoogleHandler}
                                 signoutHandler={SignoutHandler}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* ForgotPassword screen */}
+                    <Stack.Screen
+                        name="ForgotPassword"
+                        options={{
+                            headerTitle: 'Forgot Password',
+                            headerTitleStyle: {
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                color: '#1A73E9',
+                            },
+                        }}
+                    >
+                        {(props) => (
+                            <ForgotPasswordScreen
+                                {...props}
+                                user={user}
+                                error={forgotPasswordError}
+                                success={forgotPasswordSuccess}
+                                handler={resetPassword}
                             />
                         )}
                     </Stack.Screen>
