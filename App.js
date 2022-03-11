@@ -32,12 +32,16 @@ import {
     signOut,
     sendPasswordResetEmail,
     GoogleAuthProvider,
+    FacebookAuthProvider,
     signInWithCredential,
 } from 'firebase/auth'
 import { initializeFirestore, setDoc, doc, getDoc } from 'firebase/firestore'
 //Google signin
 import * as Google from 'expo-auth-session/providers/google'
 import * as WebBrowser from 'expo-web-browser'
+//Facebook signin
+import * as Facebook from 'expo-auth-session/providers/facebook'
+import { ResponseType } from 'expo-auth-session'
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -69,13 +73,21 @@ export default function App() {
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
 
-    console.log('userGoogle', userGoogle)
+    const [requestGoogle, responseGoogle, promptAsyncGoogle] =
+        Google.useIdTokenAuthRequest({
+            androidClientId: process.env.ANDROID_ID,
+            androidStandaloneAppId: process.env.ANDROID_ID,
+            iosStandaloneAppId: process.env.IOS_ID,
+            iosClientId: process.env.IOS_ID,
+            expoClientId: process.env.WEB_ID,
+        })
 
-    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-        androidClientId: process.env.ANDROID_ID,
-        iosClientId: process.env.IOS_ID,
-        expoClientId: process.env.WEB_ID,
-    })
+    const [requestFacebook, responseFacebook, promptAsyncFacebook] =
+        Facebook.useAuthRequest({
+            responseType: ResponseType.Token,
+            clientId: '2806562206313924',
+        })
+
     //Listener for authentication state
     useEffect(() => {
         onAuthStateChanged(FBauth, async (userAuth) => {
@@ -85,12 +97,12 @@ export default function App() {
                 if (docSnap.exists()) {
                     if (user === undefined) {
                         setUser(docSnap.data())
-                        console.log('User found and saved')
+                        // console.log('User found and saved')
                         setAuth(true)
                     }
                 } else {
                     setAuth(true)
-                    console.log('No such document!')
+                    // console.log('No such document!')
                 }
             } else {
                 setAuth(false)
@@ -100,14 +112,14 @@ export default function App() {
     }, [onAuthStateChanged])
     // UseEffect to listen the google auth response to the signin
     useEffect(() => {
-        if (response?.type === 'success') {
-            const { id_token } = response.params
+        if (responseGoogle?.type === 'success') {
+            const { id_token } = responseGoogle.params
 
             const credential = GoogleAuthProvider.credential(id_token)
             signInWithCredential(FBauth, credential)
                 .then(() => {
-                    console.log('User signed in with Google!')
-                    console.log('User', FBauth.currentUser)
+                    // console.log('User signed in with Google!')
+                    // console.log('User Google:', FBauth.currentUser)
                     setUserGoogle(FBauth.currentUser)
                 })
                 .catch((error) => {
@@ -119,7 +131,30 @@ export default function App() {
                         GoogleAuthProvider.credentialFromError(error)
                 })
         }
-    }, [response])
+    }, [responseGoogle])
+    // UseEffect to listen the facebook auth response to the signin
+    useEffect(() => {
+        if (responseFacebook?.type === 'success') {
+            const { access_token } = responseFacebook.params
+
+            const credential = FacebookAuthProvider.credential(access_token)
+            // Sign in with the credential from the Facebook user.
+            signInWithCredential(FBauth, credential)
+                .then(() => {
+                    // console.log('User signed in with Facebook!')
+                    // console.log('User Facebook:', FBauth.currentUser)
+                    setUserGoogle(FBauth.currentUser)
+                })
+                .catch((error) => {
+                    const errorCode = error.code
+                    const errorMessage = error.message
+                    const email = error.email
+                    console.log(errorCode, errorMessage, email)
+                    const credential =
+                        FacebookAuthProvider.credentialFromError(error)
+                })
+        }
+    }, [responseFacebook])
 
     //Function to signup with email
     const SignupHandler = (
@@ -222,7 +257,11 @@ export default function App() {
 
     //Function to login/signup with Google
     const googleLogin = () => {
-        promptAsync()
+        promptAsyncGoogle()
+    }
+    //Function to login/signup with Facebook
+    const facebookLogin = () => {
+        promptAsyncFacebook()
     }
 
     return (
@@ -246,6 +285,7 @@ export default function App() {
                                 error={signinError}
                                 handler={SigninHandler}
                                 googleLogin={googleLogin}
+                                facebookLogin={facebookLogin}
                             />
                         )}
                     </Stack.Screen>

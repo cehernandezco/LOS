@@ -116,6 +116,7 @@ const LoginScreen = (props) => {
                             uppercase={false}
                             style={[styles.socialButton, styles.signinButton]}
                             icon={require('../assets/facebook.png')}
+                            onPress={() => props.facebookLogin()}
                         >
                             Continue with Facebook
                         </Button>
