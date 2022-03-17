@@ -16,6 +16,24 @@ const HomeScreen = (props) => {
             ) {
                 navigation.reset({ index: 0, routes: [{ name: 'SelectRole' }] })
                 //navigation.navigate('SelectRole',{user: props.user})
+            } else {
+                if (props.user.elderly) {
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: 'ElderlyHome' }],
+                    })
+                } else {
+                    if (props.user.guardian) {
+                        /*
+                        navigation.reset({
+                            index: 0,
+                            routes: [{ name: 'GuardianHome' }],
+                        })
+                        */
+                    } else {
+                        //admin
+                    }
+                }
             }
         }
     }, [props.auth])
