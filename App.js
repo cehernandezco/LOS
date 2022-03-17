@@ -35,7 +35,13 @@ import {
     FacebookAuthProvider,
     signInWithCredential,
 } from 'firebase/auth'
-import { initializeFirestore, setDoc, doc, getDoc } from 'firebase/firestore'
+import {
+    initializeFirestore,
+    setDoc,
+    doc,
+    getDoc,
+    updateDoc,
+} from 'firebase/firestore'
 //Google signin
 import * as Google from 'expo-auth-session/providers/google'
 import * as WebBrowser from 'expo-web-browser'
@@ -48,6 +54,7 @@ WebBrowser.maybeCompleteAuthSession()
 //Signout module
 import Signout from './components/Signout'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
+import SelectRoleScreen from './screens/SelectRoleScreen'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
@@ -75,7 +82,8 @@ export default function App() {
     const [signinError, setSigninError] = useState()
     const [forgotPasswordError, setForgotPasswordError] = useState()
     const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState()
-    
+    const [selectRoleError, setSelectRoleError] = useState()
+    const [selectRoleSuccess, setSelectRoleSuccess] = useState()
 
     const [requestGoogle, responseGoogle, promptAsyncGoogle] =
         Google.useIdTokenAuthRequest({
@@ -269,6 +277,19 @@ export default function App() {
         promptAsyncFacebook()
     }
 
+    //Function to update user
+    const updateUser = async (user) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        console.log(user)
+        await updateDoc(docRef, user)
+            .then(function () {
+                navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
+            })
+            .catch((error) => {
+                setSelectRoleError(error.code)
+            })
+    }
+
     return (
         <PaperProvider theme={theme}>
             <NavigationContainer>
@@ -350,6 +371,28 @@ export default function App() {
                                 error={forgotPasswordError}
                                 success={forgotPasswordSuccess}
                                 handler={resetPassword}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* SelectRole screen */}
+                    <Stack.Screen
+                        name="SelectRole"
+                        options={{
+                            headerTitle: 'Select role',
+                            headerTitleStyle: {
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                color: '#1A73E9',
+                            },
+                        }}
+                    >
+                        {(props) => (
+                            <SelectRoleScreen
+                                {...props}
+                                user={user}
+                                error={selectRoleError}
+                                success={selectRoleSuccess}
+                                handler={updateUser}
                             />
                         )}
                     </Stack.Screen>

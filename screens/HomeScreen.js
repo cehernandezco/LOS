@@ -7,6 +7,16 @@ const HomeScreen = (props) => {
     useEffect(() => {
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        } else {
+            console.log(props.user)
+            if (
+                !props.user.elderly &&
+                !props.user.guardian &&
+                !props.user.admin
+            ) {
+                navigation.reset({ index: 0, routes: [{ name: 'SelectRole' }] })
+                //navigation.navigate('SelectRole',{user: props.user})
+            }
         }
     }, [props.auth])
 
