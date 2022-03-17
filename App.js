@@ -55,6 +55,7 @@ WebBrowser.maybeCompleteAuthSession()
 import Signout from './components/Signout'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import SelectRoleScreen from './screens/SelectRoleScreen'
+import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
@@ -413,6 +414,25 @@ export default function App() {
                     >
                         {(props) => (
                             <HomeScreen {...props} auth={auth} user={user} />
+                        )}
+                    </Stack.Screen>
+                    {/* ElderlyHome screen */}
+                    <Stack.Screen
+                        name="ElderlyHome"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Home',
+                            headerRight: (props) => (
+                                <Signout
+                                    {...props}
+                                    handler={SignoutHandler}
+                                    user={user}
+                                />
+                            ),
+                        }}
+                    >
+                        {(props) => (
+                            <ElderlyHomeScreen {...props} auth={auth} user={user} />
                         )}
                     </Stack.Screen>
                 </Stack.Navigator>
