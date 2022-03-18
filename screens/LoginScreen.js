@@ -21,12 +21,25 @@ const LoginScreen = (props) => {
 
     useEffect(() => {
         if (props.auth && !props.user) {
+            console.log('Props user undefined normally: ', props.user?.uid)
             navigation.reset({
                 index: 0,
                 routes: [{ name: 'RegisterGoogle' }],
             })
         } else if (props.auth) {
-            navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
+            if (props.user.elderly) {
+                console.log('Props user ', props.user?.uid)
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'ElderlyHome' }],
+                })
+            } else {
+                console.log('Props user ', props.user?.uid)
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'GuardianHome' }],
+                })
+            }
         }
     }, [props.auth])
 

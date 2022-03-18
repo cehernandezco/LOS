@@ -14,11 +14,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack'
 //React native paper
 import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper'
 //Screens
-import HomeScreen from './screens/HomeScreen'
+import GuardianHomeScreen from './screens/GuardianHomeScreen'
 import LoginScreen from './screens/LoginScreen'
 import SplashScreen from './screens/SplashScreen'
 import RegisterScreen from './screens/RegisterScreen'
 import RegisterGoogleScreen from './screens/RegisterGoogleScreen'
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
+import SelectRoleScreen from './screens/SelectRoleScreen'
+import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
 //React
 import React, { useState, useEffect } from 'react'
 //firebase
@@ -53,9 +56,6 @@ WebBrowser.maybeCompleteAuthSession()
 
 //Signout module
 import Signout from './components/Signout'
-import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
-import SelectRoleScreen from './screens/SelectRoleScreen'
-import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
@@ -93,6 +93,7 @@ export default function App() {
             iosStandaloneAppId: process.env.IOS_ID,
             iosClientId: process.env.IOS_ID,
             expoClientId: process.env.WEB_ID,
+            webClientId: process.env.WEB_ID,
         })
 
     const [requestFacebook, responseFacebook, promptAsyncFacebook] =
@@ -105,6 +106,7 @@ export default function App() {
     useEffect(() => {
         onAuthStateChanged(FBauth, async (userAuth) => {
             if (userAuth) {
+                // console.log('User id: ', userAuth.uid)
                 const docRef = doc(db, 'Users', userAuth.uid)
                 const docSnap = await getDoc(docRef)
                 if (docSnap.exists()) {
@@ -115,7 +117,7 @@ export default function App() {
                     }
                 } else {
                     setAuth(true)
-                    // console.log('No such document!')
+                    console.log('No such document!')
                 }
             } else {
                 setAuth(false)
@@ -192,7 +194,7 @@ export default function App() {
                     elderly: false,
                 })
 
-                setUser(FBauth.currentUser.user)
+                setUserGoogle(FBauth.currentUser.user)
                 setAuth(true)
             })
             .catch((error) => {
@@ -227,8 +229,8 @@ export default function App() {
     const SigninHandler = (email, password) => {
         signInWithEmailAndPassword(FBauth, email, password)
             .then(() => {
-                setUser(FBauth.currentUser.user)
-                setAuth(true)
+                // setUser(FBauth.currentUser.user)
+                // setAuth(true)
             })
             .catch((error) => {
                 const message = error.code.includes('/')
@@ -379,12 +381,13 @@ export default function App() {
                     <Stack.Screen
                         name="SelectRole"
                         options={{
-                            headerTitle: 'Select role',
-                            headerTitleStyle: {
-                                fontSize: 20,
-                                fontWeight: 'bold',
-                                color: '#1A73E9',
-                            },
+                            headerShown: false,
+                            // headerTitle: 'Select role',
+                            // headerTitleStyle: {
+                            //     fontSize: 20,
+                            //     fontWeight: 'bold',
+                            //     color: '#1A73E9',
+                            // },
                         }}
                     >
                         {(props) => (
@@ -399,7 +402,7 @@ export default function App() {
                     </Stack.Screen>
                     {/* Home screen */}
                     <Stack.Screen
-                        name="Home"
+                        name="GuardianHome"
                         options={{
                             headerShown: true,
                             headerTitle: 'Home',
@@ -413,7 +416,11 @@ export default function App() {
                         }}
                     >
                         {(props) => (
-                            <HomeScreen {...props} auth={auth} user={user} />
+                            <GuardianHomeScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                            />
                         )}
                     </Stack.Screen>
                     {/* ElderlyHome screen */}
@@ -432,7 +439,11 @@ export default function App() {
                         }}
                     >
                         {(props) => (
-                            <ElderlyHomeScreen {...props} auth={auth} user={user} />
+                            <ElderlyHomeScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                            />
                         )}
                     </Stack.Screen>
                 </Stack.Navigator>

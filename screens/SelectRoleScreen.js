@@ -8,7 +8,7 @@ import {
     Alert,
     Image,
 } from 'react-native'
-import { Button, TextInput as TextInputCustom } from 'react-native-paper'
+import { Button } from 'react-native-paper'
 import Constants from 'expo-constants'
 import { useNavigation } from '@react-navigation/native'
 
@@ -35,21 +35,29 @@ const SelectRoleScreen = (props) => {
     useEffect(() => {
         console.log(role)
         if (role.length > 0)
-            navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
+            if (role == 'elderly') {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'ElderlyHome' }],
+                })
+            } else {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'GuardianHome' }],
+                })
+            }
     }, [role])
 
     useEffect(() => {
-        if (caregiverButtonTitle.length < 0) {
-            setCaregiverButtonTitle('This is my phone (Caregiver)')
-            setCaregiverButtonText(
-                'Use this app to help seniors remain safe and assist in an emergency'
-            )
-            setElderButtonTitle("This is my senior's phone")
-            setElderButtonText(
-                'Use this app for your safety and as an emergency aid'
-            )
-        }
-    })
+        setCaregiverButtonTitle("This is my Caregiver's phone")
+        setCaregiverButtonText(
+            'Use this app to help seniors remain safe and assist in an emergency.'
+        )
+        setElderButtonTitle("This is my senior's phone")
+        setElderButtonText(
+            'Use this app for your safety and as an emergency aid.'
+        )
+    }, [])
 
     const selectRole = (role) => {
         console.log(role)
@@ -61,12 +69,14 @@ const SelectRoleScreen = (props) => {
             props.user.guardian = true
             props.user.elderly = false
         }
-        console.log(props)
+        // console.log(props)
         props.handler(props.user)
         setRole(role)
+        setLoading(true)
     }
 
     const ButtonTitleText = (props) => {
+        console.log('elderly title: ', props.title)
         return (
             <View style={styles.viewButtonTitleContainer}>
                 <Text style={styles.buttonLabelTitle}>{props.title}</Text>
@@ -91,7 +101,7 @@ const SelectRoleScreen = (props) => {
 
                 <View style={styles.resetButtonArea}>
                     <Button
-                        style={[styles.buttons, styles.selectRoleButton]}
+                        style={styles.buttons}
                         labelStyle={styles.selectRoleText}
                         accessibilityLabel="Select role elderly"
                         loading={loading}
@@ -111,7 +121,7 @@ const SelectRoleScreen = (props) => {
                         ></ButtonTitleText>
                     </Button>
                     <Button
-                        style={[styles.buttons, styles.selectRoleButton]}
+                        style={styles.buttons}
                         labelStyle={styles.selectRoleText}
                         accessibilityLabel="Select role guardian"
                         loading={loading}
@@ -168,9 +178,11 @@ const styles = StyleSheet.create({
     title: {
         color: '#000',
         fontSize: 24,
-        paddingBottom: 20,
+        marginBottom: 20,
+        marginTop: 50,
     },
     selectRoleText: {
+        padding: 20,
         color: '#FFF',
         fontSize: 18,
     },
@@ -181,7 +193,8 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     buttons: {
-        width: '85%',
+        width: '90%',
+        backgroundColor: '#2D71B6',
         height: 100,
         marginBottom: 10,
         shadowColor: '#000',
@@ -194,9 +207,10 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     viewButtonTitleContainer: {
-        width: '85%',
+        width: 210,
         alignItems: 'flex-start',
         flexDirection: 'column',
+        marginRight: 15,
     },
     buttonTitleContainer: {
         alignItems: 'flex-start',
@@ -204,31 +218,22 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         flex: 1,
     },
-    selectRoleButton: {
-        backgroundColor: '#2D71B6',
-    },
     iconButton: {
-        width: 100,
+        width: 117,
         height: 80,
         margin: 5,
         marginTop: 10,
-        marginLeft: 50,
+        marginLeft: 25,
     },
     buttonLabelTitle: {
         fontSize: 18,
         fontWeight: '400',
         color: '#FFF',
-        borderWidth: 0,
+        marginBottom: 5,
     },
     buttonLabelText: {
         fontSize: 12,
         color: '#FFF',
         borderWidth: 0,
-    },
-
-    bottomArea: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
 })

@@ -26,7 +26,7 @@ const ElderlyHomeScreen = (props) => {
     }, [props.error])
 
     useEffect(() => {
-        console.log(props.user)
+        // console.log(props.user)
         setRole(props.user.elderly)
         if (role.length > 0)
             navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
