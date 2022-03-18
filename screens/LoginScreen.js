@@ -18,6 +18,8 @@ const LoginScreen = (props) => {
     const [password, setPassword] = useState('')
     const [loginText, setLoginText] = useState('LOG IN')
     const [loading, setLoading] = useState(false)
+    const [googleLoading, setGoogleLoading] = useState(false)
+    const [facebookLoading, setFacebookLoading] = useState(false)
 
     useEffect(() => {
         if (props.auth && !props.user) {
@@ -129,7 +131,11 @@ const LoginScreen = (props) => {
                             uppercase={false}
                             style={[styles.socialButton, styles.signinButton]}
                             icon={require('../assets/facebook.png')}
-                            onPress={() => props.facebookLogin()}
+                            loading={facebookLoading}
+                            onPress={() => {
+                                setFacebookLoading(true)
+                                props.facebookLogin()
+                            }}
                         >
                             Continue with Facebook
                         </Button>
@@ -144,7 +150,11 @@ const LoginScreen = (props) => {
                                 { paddingRight: 24 },
                             ]}
                             icon={require('../assets/google.png')}
-                            onPress={() => props.googleLogin()}
+                            loading={googleLoading}
+                            onPress={() => {
+                                setGoogleLoading(true)
+                                props.googleLogin()
+                            }}
                         >
                             Continue with Google
                         </Button>

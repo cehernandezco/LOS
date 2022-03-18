@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { StyleSheet, Text, View, Keyboard } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import { StyleSheet, Text, View, Keyboard, Alert } from 'react-native'
 import { Button, TextInput } from 'react-native-paper'
 import DateTimePicker from '@react-native-community/datetimepicker'
 
@@ -14,6 +14,10 @@ const RegisterScreen = (props) => {
     const [error, setError] = useState('')
     const [registerText, setRegisterText] = useState('REGISTER')
     const [loading, setLoading] = useState(false)
+
+    useEffect(() => {
+        error ? Alert.alert('Error Register', error) : null
+    }, [error])
 
     //Formatted date with full to print in the input field
     const formatDate = (date) => {
@@ -133,7 +137,6 @@ const RegisterScreen = (props) => {
             </View>
 
             <View style={styles.buttonContainer}>
-                <Text style={styles.error}>{error || props.error}</Text>
                 <Button
                     style={styles.button}
                     labelStyle={styles.buttonText}
@@ -197,12 +200,5 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#FFF',
         textAlign: 'center',
-    },
-    error: {
-        color: 'red',
-        fontSize: 15,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 10,
     },
 })

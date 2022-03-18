@@ -33,7 +33,7 @@ const GuardianHomeScreen = (props) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView>
+            <ScrollView style={styles.scrollView}>
                 <View style={styles.header}>
                     <Image
                         style={styles.logo}
@@ -56,6 +56,13 @@ const GuardianHomeScreen = (props) => {
                         onChangeText={(text) => setEmail(text)}
                         style={styles.emailInput}
                     />
+                    <Button
+                        mode="contained"
+                        labelStyle={styles.buttonSearchLabel}
+                        style={styles.buttonSearch}
+                    >
+                        search
+                    </Button>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -69,18 +76,19 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFF',
         alignItems: 'center',
-        justifyContent: 'center',
 
         // marginTop: Constants.statusBarHeight,
+    },
+    scrollView: {
+        flex: 1,
+        width: '100%',
+        paddingHorizontal: 20,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginHorizontal: 'auto',
-        width: '80%',
         justifyContent: 'space-between',
-        borderColor: '#0071c2',
-        borderWidth: 2,
+        marginBottom: 20,
     },
     logo: {
         width: 151,
@@ -97,5 +105,13 @@ const styles = StyleSheet.create({
         width: '85%',
         paddingLeft: 10,
         marginBottom: 20,
+    },
+    buttonSearch: {
+        backgroundColor: '#ff6b15',
+    },
+    buttonSearchLabel: {
+        paddingHorizontal: 15,
+        paddingVertical: 10,
+        fontSize: 18,
     },
 })

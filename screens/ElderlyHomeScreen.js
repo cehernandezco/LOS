@@ -22,6 +22,12 @@ const ElderlyHomeScreen = (props) => {
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        if (!props.auth) {
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        }
+    }, [props.auth])
+
+    useEffect(() => {
         props.error ? Alert.alert('Error selecting a role ', props.error) : null
     }, [props.error])
 
@@ -114,8 +120,7 @@ const ElderlyHomeScreen = (props) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView>
-                <View style={styles.header} />
+            <ScrollView style={styles.scrollView}>
                 <View style={styles.signinArea}>
                     <Image
                         style={styles.logo}
@@ -187,15 +192,13 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFF',
         alignItems: 'center',
-        marginTop: Constants.statusBarHeight,
+
+        // marginTop: Constants.statusBarHeight,
     },
-    header: {
+    scrollView: {
         flex: 1,
-        backgroundColor: '#FFF',
-        alignItems: 'flex-start',
-        justifyContent: 'flex-start',
         width: '100%',
-        maxHeight: '13%',
+        paddingHorizontal: 70,
     },
     signinArea: {
         alignItems: 'center',
@@ -249,10 +252,7 @@ const styles = StyleSheet.create({
     },
     helpButtonLabel: {
         color: '#FFF',
-        textAlign: 'center',
-        alignItems: 'center',
         fontSize: 80,
-        justifyContent: 'center',
     },
     helpButton: {
         backgroundColor: '#FF0000',
