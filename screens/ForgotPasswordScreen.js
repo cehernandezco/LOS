@@ -13,7 +13,6 @@ import Constants from 'expo-constants'
 import { useNavigation } from '@react-navigation/native'
 
 const ForgotPasswordScreen = (props) => {
-    const navigation = useNavigation()
     const [email, setEmail] = useState('')
     const [resetText, setResetText] = useState('RESET')
     const [loading, setLoading] = useState(false)
@@ -84,7 +83,7 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFF',
         alignItems: 'center',
-        marginTop: Constants.statusBarHeight,
+        // marginTop: Constants.statusBarHeight,
     },
     header: {
         flex: 1,
