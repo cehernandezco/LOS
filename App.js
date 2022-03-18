@@ -193,9 +193,6 @@ export default function App() {
                     guardian: false,
                     elderly: false,
                 })
-
-                setUserGoogle(FBauth.currentUser.user)
-                setAuth(true)
             })
             .catch((error) => {
                 setSignupError(error.code)

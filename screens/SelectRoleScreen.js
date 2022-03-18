@@ -7,6 +7,7 @@ import {
     View,
     Alert,
     Image,
+    TouchableOpacity,
 } from 'react-native'
 import { Button } from 'react-native-paper'
 import Constants from 'expo-constants'
@@ -15,26 +16,19 @@ import { useNavigation } from '@react-navigation/native'
 const SelectRoleScreen = (props) => {
     const navigation = useNavigation()
     const [role, setRole] = useState('')
-    const [caregiverButtonTitle, setCaregiverButtonTitle] = useState(
-        'This is my phone (Caregiver)'
-    )
-    const [caregiverButtonText, setCaregiverButtonText] = useState(
-        'Use this app to help seniors remain safe and assist in an emergency'
-    )
-    const [elderButtonTitle, setElderButtonTitle] = useState(
-        "This is my senior's phone"
-    )
-    const [elderButtonText, setElderButtonText] = useState(
-        'Use this app for your safety and as an emergency aid'
-    )
+    const [caregiverButtonTitle, setCaregiverButtonTitle] = useState('')
+    const [caregiverButtonText, setCaregiverButtonText] = useState('')
+    const [elderButtonTitle, setElderButtonTitle] = useState('')
+    const [elderButtonText, setElderButtonText] = useState('')
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
         props.error ? Alert.alert('Error selecting a role ', props.error) : null
     }, [props.error])
+
     useEffect(() => {
         console.log(role)
-        if (role.length > 0)
+        if (role.length > 0) {
             if (role == 'elderly') {
                 navigation.reset({
                     index: 0,
@@ -46,6 +40,7 @@ const SelectRoleScreen = (props) => {
                     routes: [{ name: 'GuardianHome' }],
                 })
             }
+        }
     }, [role])
 
     useEffect(() => {
@@ -75,16 +70,6 @@ const SelectRoleScreen = (props) => {
         setLoading(true)
     }
 
-    const ButtonTitleText = (props) => {
-        console.log('elderly title: ', props.title)
-        return (
-            <View style={styles.viewButtonTitleContainer}>
-                <Text style={styles.buttonLabelTitle}>{props.title}</Text>
-                <Text style={styles.buttonLabelText}>{props.text}</Text>
-            </View>
-        )
-    }
-
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView>
@@ -100,46 +85,42 @@ const SelectRoleScreen = (props) => {
                 </View>
 
                 <View style={styles.resetButtonArea}>
-                    <Button
-                        style={styles.buttons}
-                        labelStyle={styles.selectRoleText}
-                        accessibilityLabel="Select role elderly"
-                        loading={loading}
-                        icon={() => (
-                            <Image
-                                source={require('../assets/elderly_icon_small.png')}
-                                style={styles.iconButton}
-                            />
-                        )}
-                        mode="contained"
+                    {/* Elderly button */}
+                    <TouchableOpacity
+                        style={styles.buttonTouchableOpacity}
                         onPress={() => selectRole('elderly')}
                     >
-                        <ButtonTitleText
-                            style={styles.buttonTitleContainer}
-                            title={elderButtonTitle}
-                            text={elderButtonText}
-                        ></ButtonTitleText>
-                    </Button>
-                    <Button
-                        style={styles.buttons}
-                        labelStyle={styles.selectRoleText}
-                        accessibilityLabel="Select role guardian"
-                        loading={loading}
-                        icon={() => (
-                            <Image
-                                source={require('../assets/young_adults_icon_small.png')}
-                                style={styles.iconButton}
-                            />
-                        )}
-                        mode="contained"
+                        <Image
+                            source={require('../assets/elderly_icon_small.png')}
+                            style={styles.iconButton}
+                        />
+                        <View style={styles.viewButtonTitleContainer}>
+                            <Text style={styles.buttonLabelTitle}>
+                                {elderButtonTitle}
+                            </Text>
+                            <Text style={styles.buttonLabelText}>
+                                {elderButtonText}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                    {/* Guardian button */}
+                    <TouchableOpacity
+                        style={styles.buttonTouchableOpacity}
                         onPress={() => selectRole('guardian')}
                     >
-                        <ButtonTitleText
-                            style={styles.buttonTitleContainer}
-                            title={caregiverButtonTitle}
-                            text={caregiverButtonText}
-                        ></ButtonTitleText>
-                    </Button>
+                        <Image
+                            source={require('../assets/young_adults_icon_small.png')}
+                            style={styles.iconButton}
+                        />
+                        <View style={styles.viewButtonTitleContainer}>
+                            <Text style={styles.buttonLabelTitle}>
+                                {caregiverButtonTitle}
+                            </Text>
+                            <Text style={styles.buttonLabelText}>
+                                {caregiverButtonText}
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -181,21 +162,13 @@ const styles = StyleSheet.create({
         marginBottom: 20,
         marginTop: 50,
     },
-    selectRoleText: {
-        padding: 20,
-        color: '#FFF',
-        fontSize: 18,
-    },
-    resetButtonArea: {
+    buttonTouchableOpacity: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
         width: '100%',
-        marginBottom: 20,
-    },
-    buttons: {
-        width: '90%',
         backgroundColor: '#2D71B6',
         height: 100,
+        borderRadius: 6,
         marginBottom: 10,
         shadowColor: '#000',
         shadowOffset: {
@@ -212,24 +185,17 @@ const styles = StyleSheet.create({
         flexDirection: 'column',
         marginRight: 15,
     },
-    buttonTitleContainer: {
-        alignItems: 'flex-start',
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        flex: 1,
-    },
     iconButton: {
         width: 117,
         height: 80,
         margin: 5,
         marginTop: 10,
-        marginLeft: 25,
+        marginLeft: 5,
     },
     buttonLabelTitle: {
         fontSize: 18,
         fontWeight: '400',
         color: '#FFF',
-        marginBottom: 5,
     },
     buttonLabelText: {
         fontSize: 12,
