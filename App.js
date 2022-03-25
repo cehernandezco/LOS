@@ -39,6 +39,8 @@ import {
     signInWithCredential,
 } from 'firebase/auth'
 import {
+    arrayUnion,
+    arrayRemove,
     collection,
     initializeFirestore,
     setDoc,
@@ -89,7 +91,7 @@ export default function App() {
     const [forgotPasswordError, setForgotPasswordError] = useState()
     const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState()
     const [selectRoleError, setSelectRoleError] = useState()
-    const [selectRoleSuccess, setSelectRoleSuccess] = useState()
+    const [guardianAddElderlyError, setGuardianAddElderlyError] = useState()
 
     const [requestGoogle, responseGoogle, promptAsyncGoogle] =
         Google.useIdTokenAuthRequest({
@@ -107,23 +109,27 @@ export default function App() {
             clientId: '2806562206313924',
         })
 
+    const updateUserInfo = async (id) => {
+        // console.log('User id: ', userAuth.uid)
+        const docRef = doc(db, 'Users', id)
+        const docSnap = await getDoc(docRef)
+        if (docSnap.exists()) {
+            setUser(docSnap.data())
+            console.log('User found and saved')
+            setAuth(true)
+        } else {
+            setAuth(true)
+            console.log('No such document!')
+        }
+    }
+
+    console.log('user', user)
+
     //Listener for authentication state
     useEffect(() => {
         onAuthStateChanged(FBauth, async (userAuth) => {
             if (userAuth) {
-                // console.log('User id: ', userAuth.uid)
-                const docRef = doc(db, 'Users', userAuth.uid)
-                const docSnap = await getDoc(docRef)
-                if (docSnap.exists()) {
-                    if (user === undefined) {
-                        setUser(docSnap.data())
-                        // console.log('User found and saved')
-                        setAuth(true)
-                    }
-                } else {
-                    setAuth(true)
-                    console.log('No such document!')
-                }
+                updateUserInfo(userAuth.uid)
             } else {
                 setAuth(false)
                 setUser(null)
@@ -175,7 +181,7 @@ export default function App() {
                 })
         }
     }, [responseFacebook])
-    //useEffect to get every user in firebase
+    //useEffect to get elderly user in firebase
     useEffect(() => {
         if (elderlyUsers.length === 0) {
             const q = query(
@@ -183,15 +189,6 @@ export default function App() {
                 where('elderly', '==', true)
             )
             const getElderlyUsers = async () => {
-                // const docRef = doc(db, 'Users')
-                // const docSnap = getDoc(docRef)
-                // docSnap.onSnapshot((snapshot) => {
-                //     const users = []
-                //     snapshot.forEach((doc) => {
-                //         users.push(doc.data())
-                //     })
-                //     setElderlyUsers(users)
-                // })
                 const querySnapshot = await getDocs(q)
                 const users = []
 
@@ -203,7 +200,6 @@ export default function App() {
             getElderlyUsers()
         }
     }, [])
-    console.log('elderlyUsers: ', elderlyUsers)
 
     //Function to signup with email
     const SignupHandler = (
@@ -323,6 +319,15 @@ export default function App() {
                 setSelectRoleError(error.code)
             })
     }
+    //Function guardian add an elderly user
+    const addElderlyUser = async (elderlyUser) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            elderlyFollow: arrayUnion({ id: elderlyUser.id, accept: false }),
+        }).then(function () {
+            updateUserInfo(FBauth.currentUser.uid)
+        })
+    }
 
     return (
         <PaperProvider theme={theme}>
@@ -426,7 +431,6 @@ export default function App() {
                                 {...props}
                                 user={user}
                                 error={selectRoleError}
-                                success={selectRoleSuccess}
                                 handler={updateUser}
                             />
                         )}
@@ -452,6 +456,8 @@ export default function App() {
                                 auth={auth}
                                 user={user}
                                 elderlyUsers={elderlyUsers}
+                                error={guardianAddElderlyError}
+                                addElderlyUser={addElderlyUser}
                             />
                         )}
                     </Stack.Screen>

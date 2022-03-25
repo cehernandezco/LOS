@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { StyleSheet, Text, View } from 'react-native'
+import React, { useEffect, useState, useMemo } from 'react'
+import { StyleSheet, Text, View, Alert } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView, ScrollView, Image } from 'react-native'
 import {
@@ -37,6 +37,16 @@ const GuardianHomeScreen = (props) => {
                 }
             }
         })
+    }
+
+    const handleAdd = (elderly) => {
+        Alert.alert(
+            'Elderly added',
+            `${elderly.firstname} ${elderly.lastname} has been added to your list`
+        )
+        setEmail('')
+        setFilteredData([])
+        props.addElderlyUser(elderly)
     }
 
     useEffect(() => {
@@ -84,24 +94,6 @@ const GuardianHomeScreen = (props) => {
                         onChangeText={(text) => setEmail(text)}
                         style={styles.emailInput}
                     />
-                    {filteredData.length > 0 && (
-                        <View style={styles.elderlyList}>
-                            {filteredData.map((elderly, key) => {
-                                return (
-                                    console.log(elderly),
-                                    (
-                                        <Text
-                                            key={key}
-                                            style={styles.elderlyEmail}
-                                        >
-                                            {elderly.firstname}{' '}
-                                            {elderly.lastname} {elderly.email}
-                                        </Text>
-                                    )
-                                )
-                            })}
-                        </View>
-                    )}
                     <Button
                         mode="contained"
                         labelStyle={styles.buttonSearchLabel}
@@ -110,6 +102,66 @@ const GuardianHomeScreen = (props) => {
                     >
                         search
                     </Button>
+                    {filteredData.length > 0 && (
+                        <>
+                            {filteredData.map((elderly) => {
+                                return (
+                                    <>
+                                        <View
+                                            key={elderly.id}
+                                            style={styles.elderlyList}
+                                        >
+                                            <Text
+                                                style={styles.elderlylistText}
+                                            >
+                                                {elderly.firstname}{' '}
+                                                {elderly.lastname}
+                                            </Text>
+                                            <Text
+                                                style={styles.elderlylistText}
+                                            >
+                                                {elderly.email}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.addButtonArea}>
+                                            <Button
+                                                mode="contained"
+                                                labelStyle={
+                                                    styles.buttonSearchLabel
+                                                }
+                                                style={[
+                                                    styles.buttonSearch,
+                                                    styles.buttonCancel,
+                                                ]}
+                                                onPress={() => {
+                                                    setEmail('')
+                                                    setFilteredData([])
+                                                }}
+                                            >
+                                                cancel
+                                            </Button>
+                                            <Button
+                                                mode="contained"
+                                                labelStyle={[
+                                                    styles.buttonSearchLabel,
+                                                    styles.buttonAddLabel,
+                                                ]}
+                                                style={[
+                                                    styles.buttonSearch,
+                                                    styles.buttonAdd,
+                                                ]}
+                                                onPress={() => {
+                                                    handleAdd(elderly)
+                                                }}
+                                            >
+                                                add
+                                            </Button>
+                                        </View>
+                                    </>
+                                )
+                            })}
+                        </>
+                    )}
                 </View>
             </ScrollView>
         </SafeAreaView>
@@ -155,10 +207,39 @@ const styles = StyleSheet.create({
     },
     buttonSearch: {
         backgroundColor: '#ff6b15',
+        marginBottom: 20,
     },
     buttonSearchLabel: {
         paddingHorizontal: 15,
         paddingVertical: 10,
         fontSize: 18,
+    },
+    elderlyList: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '85%',
+        overflow: 'hidden',
+        marginBottom: 20,
+        borderRadius: 6,
+        borderColor: '#c1c1c1',
+        borderWidth: 1,
+    },
+    elderlylistText: {
+        padding: 10,
+        fontSize: 18,
+    },
+    addButtonArea: {
+        flexDirection: 'row',
+        width: '85%',
+        justifyContent: 'space-between',
+    },
+    buttonCancel: {
+        backgroundColor: 'red',
+    },
+    buttonAdd: {
+        backgroundColor: '#2D71B6',
+    },
+    buttonAddLabel: {
+        paddingHorizontal: 30,
     },
 })
