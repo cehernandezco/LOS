@@ -11,7 +11,34 @@ import Constants from 'expo-constants'
 
 const GuardianHomeScreen = (props) => {
     const [email, setEmail] = useState('')
+    const [filteredData, setFilteredData] = useState([])
+    const [elderlyUsers, setElderlyUsers] = useState([])
     const navigation = useNavigation()
+
+    useEffect(() => {
+        if (elderlyUsers.length === 0) {
+            setElderlyUsers(props.elderlyUsers)
+        }
+    }, [])
+
+    const handleFilter = () => {
+        setFilteredData([])
+        elderlyUsers.map((elder) => {
+            if (elder.email === email) {
+                const newFilter = elderlyUsers.filter((text) => {
+                    return text.email
+                        .toLowerCase()
+                        .includes(email.toLowerCase())
+                })
+                if (email === '') {
+                    setFilteredData([])
+                } else {
+                    setFilteredData(newFilter)
+                }
+            }
+        })
+    }
+
     useEffect(() => {
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
@@ -53,13 +80,33 @@ const GuardianHomeScreen = (props) => {
                         mode="outlined"
                         autoComplete="email"
                         activeOutlineColor="#0071c2"
+                        value={email}
                         onChangeText={(text) => setEmail(text)}
                         style={styles.emailInput}
                     />
+                    {filteredData.length > 0 && (
+                        <View style={styles.elderlyList}>
+                            {filteredData.map((elderly, key) => {
+                                return (
+                                    console.log(elderly),
+                                    (
+                                        <Text
+                                            key={key}
+                                            style={styles.elderlyEmail}
+                                        >
+                                            {elderly.firstname}{' '}
+                                            {elderly.lastname} {elderly.email}
+                                        </Text>
+                                    )
+                                )
+                            })}
+                        </View>
+                    )}
                     <Button
                         mode="contained"
                         labelStyle={styles.buttonSearchLabel}
                         style={styles.buttonSearch}
+                        onPress={() => handleFilter(email)}
                     >
                         search
                     </Button>

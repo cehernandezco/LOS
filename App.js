@@ -39,11 +39,15 @@ import {
     signInWithCredential,
 } from 'firebase/auth'
 import {
+    collection,
     initializeFirestore,
     setDoc,
+    query,
     doc,
     getDoc,
+    getDocs,
     updateDoc,
+    where,
 } from 'firebase/firestore'
 //Google signin
 import * as Google from 'expo-auth-session/providers/google'
@@ -78,6 +82,7 @@ const theme = {
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
+    const [elderlyUsers, setElderlyUsers] = useState([])
     const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
@@ -170,6 +175,35 @@ export default function App() {
                 })
         }
     }, [responseFacebook])
+    //useEffect to get every user in firebase
+    useEffect(() => {
+        if (elderlyUsers.length === 0) {
+            const q = query(
+                collection(db, 'Users'),
+                where('elderly', '==', true)
+            )
+            const getElderlyUsers = async () => {
+                // const docRef = doc(db, 'Users')
+                // const docSnap = getDoc(docRef)
+                // docSnap.onSnapshot((snapshot) => {
+                //     const users = []
+                //     snapshot.forEach((doc) => {
+                //         users.push(doc.data())
+                //     })
+                //     setElderlyUsers(users)
+                // })
+                const querySnapshot = await getDocs(q)
+                const users = []
+
+                querySnapshot.forEach((doc) => {
+                    users.push({ id: doc.id, ...doc.data() })
+                })
+                setElderlyUsers(users)
+            }
+            getElderlyUsers()
+        }
+    }, [])
+    console.log('elderlyUsers: ', elderlyUsers)
 
     //Function to signup with email
     const SignupHandler = (
@@ -417,6 +451,7 @@ export default function App() {
                                 {...props}
                                 auth={auth}
                                 user={user}
+                                elderlyUsers={elderlyUsers}
                             />
                         )}
                     </Stack.Screen>
