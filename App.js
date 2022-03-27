@@ -22,6 +22,7 @@ import RegisterGoogleScreen from './screens/RegisterGoogleScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import SelectRoleScreen from './screens/SelectRoleScreen'
 import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
+import ListOfGuardiansScreen from './screens/ListOfGuardiansScreen'
 //React
 import React, { useState, useEffect } from 'react'
 //firebase
@@ -50,6 +51,7 @@ import {
     getDocs,
     updateDoc,
     where,
+    onSnapshot,
 } from 'firebase/firestore'
 //Google signin
 import * as Google from 'expo-auth-session/providers/google'
@@ -111,19 +113,30 @@ export default function App() {
 
     const updateUserInfo = async (id) => {
         // console.log('User id: ', userAuth.uid)
-        const docRef = doc(db, 'Users', id)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-            setUser(docSnap.data())
-            console.log('User found and saved')
-            setAuth(true)
-        } else {
-            setAuth(true)
-            console.log('No such document!')
-        }
-    }
+        // const docRef = doc(db, 'Users', id)
+        // const docSnap = await getDoc(docRef)
+        // if (docSnap.exists()) {
+        //     setUser(docSnap.data())
+        //     setAuth(true)
+        //     // console.log('User found and saved')
+        // } else {
+        //     setAuth(true)
+        //     // console.log('No such document!')
+        // }
 
-    console.log('user', user)
+        //realtime snapshot user info
+        const docRef = doc(db, 'Users', id)
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                setUser(docSnap.data())
+                setAuth(true)
+                // console.log('User found and saved')
+            } else {
+                setAuth(true)
+                // console.log('No such document!')
+            }
+        })
+    }
 
     //Listener for authentication state
     useEffect(() => {
@@ -181,25 +194,26 @@ export default function App() {
                 })
         }
     }, [responseFacebook])
-    //useEffect to get elderly user in firebase
+    //useEffect to get elderly user from firebase
     useEffect(() => {
-        if (elderlyUsers.length === 0) {
-            const q = query(
-                collection(db, 'Users'),
-                where('elderly', '==', true)
-            )
-            const getElderlyUsers = async () => {
-                const querySnapshot = await getDocs(q)
+        // console.log('Enter in the elderly useEffect')
+        const q = query(collection(db, 'Users'), where('elderly', '==', true))
+        const unsubscribe = onSnapshot(
+            q,
+            (querySnapshot) => {
                 const users = []
-
                 querySnapshot.forEach((doc) => {
+                    // console.log('doc.data(): ', doc.data())
                     users.push({ id: doc.id, ...doc.data() })
                 })
                 setElderlyUsers(users)
+            },
+            (error) => {
+                console.log('Error getting documents: ', error)
             }
-            getElderlyUsers()
-        }
-    }, [])
+        )
+        // unsubscribe()
+    }, [user])
 
     //Function to signup with email
     const SignupHandler = (
@@ -219,6 +233,8 @@ export default function App() {
                     lastname: lastName,
                     dob: dob,
                     phoneNumber: phoneNumber,
+                    elderlyFollow: [],
+                    guardianFollowing: [],
                     admin: false,
                     guardian: false,
                     elderly: false,
@@ -246,6 +262,8 @@ export default function App() {
             lastname: lastName,
             dob: dob,
             phoneNumber: phoneNumber,
+            elderlyFollow: [],
+            guardianFollowing: [],
             admin: false,
             guardian: false,
             elderly: false,
@@ -310,7 +328,7 @@ export default function App() {
     //Function to update user
     const updateUser = async (user) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
-        console.log(user)
+        // console.log(user)
         await updateDoc(docRef, user)
             .then(function () {
                 navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
@@ -323,12 +341,49 @@ export default function App() {
     const addElderlyUser = async (elderlyUser) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
         await updateDoc(docRef, {
-            elderlyFollow: arrayUnion({ id: elderlyUser.id, accept: false }),
+            elderlyFollow: arrayUnion({
+                id: elderlyUser.id,
+                phone: elderlyUser.phoneNumber,
+                dob: elderlyUser.dob,
+                elderlyName: elderlyUser.firstname + ' ' + elderlyUser.lastname,
+                nickname: null,
+                accept: false,
+                respond: false,
+            }),
+        }).then(function () {
+            updateUserInfo(FBauth.currentUser.uid)
+        })
+
+        const docRef2 = doc(db, 'Users', elderlyUser.id)
+        await updateDoc(docRef2, {
+            guardianFollowing: arrayUnion({
+                id: FBauth.currentUser.uid,
+                phone: user.phoneNumber,
+                guardianName: user.firstname + ' ' + user.lastname,
+                nickname: null,
+                accept: false,
+                respond: false,
+            }),
+        })
+    }
+
+    //Function accept guardianFollowing
+    const acceptGuardian = async (elderlyUser, guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: elderlyUser.id,
+                phone: elderlyUser.phoneNumber,
+                dob: elderlyUser.dob,
+                elderlyName: elderlyUser.firstname + ' ' + elderlyUser.lastname,
+                nickname: null,
+                accept: false,
+                respond: false,
+            }),
         }).then(function () {
             updateUserInfo(FBauth.currentUser.uid)
         })
     }
-
     return (
         <PaperProvider theme={theme}>
             <NavigationContainer>
@@ -384,6 +439,7 @@ export default function App() {
                             <RegisterGoogleScreen
                                 {...props}
                                 auth={auth}
+                                userUser={user}
                                 user={userGoogle}
                                 error={signupError}
                                 handler={SignupGoogleHandler}
@@ -478,6 +534,29 @@ export default function App() {
                     >
                         {(props) => (
                             <ElderlyHomeScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* ElderlyHome screen */}
+                    <Stack.Screen
+                        name="ListOfGuardians"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Guardians list',
+                            headerRight: (props) => (
+                                <Signout
+                                    {...props}
+                                    handler={SignoutHandler}
+                                    user={user}
+                                />
+                            ),
+                        }}
+                    >
+                        {(props) => (
+                            <ListOfGuardiansScreen
                                 {...props}
                                 auth={auth}
                                 user={user}

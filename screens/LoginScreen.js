@@ -50,13 +50,9 @@ const LoginScreen = (props) => {
         if (email === '' || password === '') {
             Alert.alert('Error Login', 'Please fill all fields!')
         } else {
-            setTimeout(() => {
-                setLoginText('LOGIN')
-                setLoading(false)
-            }, 3000)
             setLoginText('LOGGING IN...')
             setLoading(true)
-            props.handler(email, password)
+            props.handler(email.toLowerCase().trim(), password)
         }
     }
 

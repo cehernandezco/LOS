@@ -14,21 +14,20 @@ const GuardianHomeScreen = (props) => {
     const [filteredData, setFilteredData] = useState([])
     const [elderlyUsers, setElderlyUsers] = useState([])
     const navigation = useNavigation()
+    const [elderlyInTheList, setElderlyInTheList] = useState(0)
 
     useEffect(() => {
-        if (elderlyUsers.length === 0) {
-            setElderlyUsers(props.elderlyUsers)
-        }
-    }, [])
+        setElderlyUsers(props.elderlyUsers)
+    }, [props.elderlyUsers])
 
     const handleFilter = () => {
         setFilteredData([])
         elderlyUsers.map((elder) => {
-            if (elder.email === email) {
+            if (elder.email === email.toLowerCase().trim()) {
                 const newFilter = elderlyUsers.filter((text) => {
                     return text.email
                         .toLowerCase()
-                        .includes(email.toLowerCase())
+                        .includes(email.toLowerCase().trim())
                 })
                 if (email === '') {
                     setFilteredData([])
@@ -53,7 +52,7 @@ const GuardianHomeScreen = (props) => {
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
         } else {
-            // console.log(props.user)
+            // console.log(elderlyUsers)
             if (!props.user.elderly && !props.user.guardian) {
                 navigation.reset({ index: 0, routes: [{ name: 'SelectRole' }] })
                 //navigation.navigate('SelectRole',{user: props.user})
@@ -67,6 +66,28 @@ const GuardianHomeScreen = (props) => {
             }
         }
     }, [props.auth])
+
+    useEffect(() => {
+        if (props.user?.elderlyFollow !== undefined) {
+            {
+                filteredData?.map((elderly) => {
+                    props.user?.elderlyFollow.map((elderlyFollow) => {
+                        if (elderlyFollow.id === elderly?.id) {
+                            setElderlyInTheList(1)
+                        } else {
+                            setElderlyInTheList(0)
+                        }
+                    })
+                })
+            }
+        }
+
+        // for (let i = 0; i < elderlyUsers?.length; i++) {
+        //     if (elderlyUsers[i].email === email) {
+        //         setElderlyInTheList(1)
+        //     }
+        // }
+    }, [filteredData])
 
     return (
         <SafeAreaView style={styles.container}>
@@ -112,19 +133,25 @@ const GuardianHomeScreen = (props) => {
                                             style={styles.elderlyList}
                                         >
                                             <Text
+                                                key={elderly.id + '1'}
                                                 style={styles.elderlylistText}
                                             >
                                                 {elderly.firstname}{' '}
                                                 {elderly.lastname}
                                             </Text>
                                             <Text
+                                                key={elderly.id + '2'}
                                                 style={styles.elderlylistText}
                                             >
                                                 {elderly.email}
                                             </Text>
                                         </View>
-                                        <View style={styles.addButtonArea}>
+                                        <View
+                                            key={elderly.id + '3'}
+                                            style={styles.addButtonArea}
+                                        >
                                             <Button
+                                                key={elderly.id + '4'}
                                                 mode="contained"
                                                 labelStyle={
                                                     styles.buttonSearchLabel
@@ -140,22 +167,43 @@ const GuardianHomeScreen = (props) => {
                                             >
                                                 cancel
                                             </Button>
-                                            <Button
-                                                mode="contained"
-                                                labelStyle={[
-                                                    styles.buttonSearchLabel,
-                                                    styles.buttonAddLabel,
-                                                ]}
-                                                style={[
-                                                    styles.buttonSearch,
-                                                    styles.buttonAdd,
-                                                ]}
-                                                onPress={() => {
-                                                    handleAdd(elderly)
-                                                }}
-                                            >
-                                                add
-                                            </Button>
+                                            {elderlyInTheList === 1 ? (
+                                                <Button
+                                                    mode="contained"
+                                                    labelStyle={
+                                                        styles.buttonSearchLabel
+                                                    }
+                                                    style={[
+                                                        styles.buttonSearch,
+                                                        styles.buttonAdd,
+                                                    ]}
+                                                    onPress={() => {
+                                                        Alert.alert(
+                                                            'Already added',
+                                                            `${elderly.firstname} ${elderly.lastname} is already added to your list.`
+                                                        )
+                                                    }}
+                                                >
+                                                    Added
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    mode="contained"
+                                                    labelStyle={[
+                                                        styles.buttonSearchLabel,
+                                                        styles.buttonAddLabel,
+                                                    ]}
+                                                    style={[
+                                                        styles.buttonSearch,
+                                                        styles.buttonAdd,
+                                                    ]}
+                                                    onPress={() => {
+                                                        handleAdd(elderly)
+                                                    }}
+                                                >
+                                                    add
+                                                </Button>
+                                            )}
                                         </View>
                                     </>
                                 )
