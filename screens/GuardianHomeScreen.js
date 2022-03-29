@@ -81,12 +81,6 @@ const GuardianHomeScreen = (props) => {
                 })
             }
         }
-
-        // for (let i = 0; i < elderlyUsers?.length; i++) {
-        //     if (elderlyUsers[i].email === email) {
-        //         setElderlyInTheList(1)
-        //     }
-        // }
     }, [filteredData])
 
     return (
@@ -97,12 +91,7 @@ const GuardianHomeScreen = (props) => {
                         style={styles.logo}
                         source={require('../assets/los_logo.png')}
                     />
-                    <IconButton
-                        icon="menu"
-                        color="#000"
-                        size={40}
-                        onPress={() => navigation.openDrawer()}
-                    />
+                    <IconButton icon="menu" color="#000" size={40} />
                 </View>
                 <View style={styles.emailArea}>
                     <TextInputCustom
@@ -125,89 +114,66 @@ const GuardianHomeScreen = (props) => {
                     </Button>
                     {filteredData.length > 0 && (
                         <>
-                            {filteredData.map((elderly) => {
-                                return (
-                                    <>
-                                        <View
-                                            key={elderly.id}
-                                            style={styles.elderlyList}
-                                        >
-                                            <Text
-                                                key={elderly.id + '1'}
-                                                style={styles.elderlylistText}
-                                            >
-                                                {elderly.firstname}{' '}
-                                                {elderly.lastname}
-                                            </Text>
-                                            <Text
-                                                key={elderly.id + '2'}
-                                                style={styles.elderlylistText}
-                                            >
-                                                {elderly.email}
-                                            </Text>
-                                        </View>
-                                        <View
-                                            key={elderly.id + '3'}
-                                            style={styles.addButtonArea}
-                                        >
-                                            <Button
-                                                key={elderly.id + '4'}
-                                                mode="contained"
-                                                labelStyle={
-                                                    styles.buttonSearchLabel
-                                                }
-                                                style={[
-                                                    styles.buttonSearch,
-                                                    styles.buttonCancel,
-                                                ]}
-                                                onPress={() => {
-                                                    setEmail('')
-                                                    setFilteredData([])
-                                                }}
-                                            >
-                                                cancel
-                                            </Button>
-                                            {elderlyInTheList === 1 ? (
-                                                <Button
-                                                    mode="contained"
-                                                    labelStyle={
-                                                        styles.buttonSearchLabel
-                                                    }
-                                                    style={[
-                                                        styles.buttonSearch,
-                                                        styles.buttonAdd,
-                                                    ]}
-                                                    onPress={() => {
-                                                        Alert.alert(
-                                                            'Already added',
-                                                            `${elderly.firstname} ${elderly.lastname} is already added to your list.`
-                                                        )
-                                                    }}
-                                                >
-                                                    Added
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    mode="contained"
-                                                    labelStyle={[
-                                                        styles.buttonSearchLabel,
-                                                        styles.buttonAddLabel,
-                                                    ]}
-                                                    style={[
-                                                        styles.buttonSearch,
-                                                        styles.buttonAdd,
-                                                    ]}
-                                                    onPress={() => {
-                                                        handleAdd(elderly)
-                                                    }}
-                                                >
-                                                    add
-                                                </Button>
-                                            )}
-                                        </View>
-                                    </>
-                                )
-                            })}
+                            <View style={styles.elderlyList}>
+                                <Text style={styles.elderlylistText}>
+                                    {filteredData[0].firstname}{' '}
+                                    {filteredData[0].lastname}
+                                </Text>
+                                <Text style={styles.elderlylistText}>
+                                    {filteredData[0].email}
+                                </Text>
+                            </View>
+                            <View style={styles.addButtonArea}>
+                                <Button
+                                    mode="contained"
+                                    labelStyle={styles.buttonSearchLabel}
+                                    style={[
+                                        styles.buttonSearch,
+                                        styles.buttonCancel,
+                                    ]}
+                                    onPress={() => {
+                                        setEmail('')
+                                        setFilteredData([])
+                                    }}
+                                >
+                                    cancel
+                                </Button>
+                                {elderlyInTheList === 1 ? (
+                                    <Button
+                                        mode="contained"
+                                        labelStyle={styles.buttonSearchLabel}
+                                        style={[
+                                            styles.buttonSearch,
+                                            styles.buttonAdd,
+                                        ]}
+                                        onPress={() => {
+                                            Alert.alert(
+                                                'Already added',
+                                                `${filteredData[0].firstname} ${filteredData[0].lastname} is already added to your list.`
+                                            )
+                                        }}
+                                    >
+                                        Added
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        mode="contained"
+                                        labelStyle={[
+                                            styles.buttonSearchLabel,
+                                            styles.buttonAddLabel,
+                                        ]}
+                                        style={[
+                                            styles.buttonSearch,
+                                            styles.buttonAdd,
+                                        ]}
+                                        onPress={() => {
+                                            handleAdd(filteredData[0])
+                                        }}
+                                    >
+                                        add
+                                    </Button>
+                                )}
+                            </View>
                         </>
                     )}
                 </View>

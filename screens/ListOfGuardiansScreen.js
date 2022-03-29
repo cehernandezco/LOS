@@ -1,14 +1,36 @@
-import React, { useEffect, useState } from 'react'
 import { StyleSheet, Text, View, Alert } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import { SafeAreaView, ScrollView, FlatList } from 'react-native'
+import { SafeAreaView, FlatList } from 'react-native'
 import { Card } from 'react-native-paper'
-import {
-    Button,
-    IconButton,
-    TextInput as TextInputCustom,
-} from 'react-native-paper'
-import Constants from 'expo-constants'
+import { Button, TextInput as TextInputCustom } from 'react-native-paper'
+// import Constants from 'expo-constants'
+
+const handleRemoveGuardian = (data, props) => {
+    // props.removeGuardian(data)
+    Alert.alert(
+        'Confirmation',
+        'Are you sure you want to remove: ' +
+            data.guardianName +
+            ' from your guardian list?',
+        [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'OK',
+                onPress: () => {
+                    Alert.alert(
+                        'Guardian removed',
+                        'Your guardian: ' +
+                            data.guardianName +
+                            ' has been removed from your list.'
+                    )
+                    props.removeGuardian(data)
+                },
+            },
+        ]
+    )
+}
 
 const Item = ({ item, props }) => (
     <Card mode={'outlined'} style={styles.card}>
@@ -20,7 +42,9 @@ const Item = ({ item, props }) => (
             <Text>Phone: {item.phone}</Text>
             <Card.Actions>
                 <Button>Edit</Button>
-                <Button>Delete</Button>
+                <Button onPress={() => handleRemoveGuardian(item, props)}>
+                    Delete
+                </Button>
                 {!item.accept ? (
                     <Button
                         onPress={() => {

@@ -86,7 +86,9 @@ const theme = {
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
+    const [guardianUser, setGuardianUser] = useState()
     const [elderlyUsers, setElderlyUsers] = useState([])
+    const [elderlyForGuardian, setElderlyForGuardian] = useState([])
     const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
@@ -330,7 +332,7 @@ export default function App() {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
         // console.log(user)
         await updateDoc(docRef, user)
-            .then(function () {
+            .then(() => {
                 navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
             })
             .catch((error) => {
@@ -350,7 +352,7 @@ export default function App() {
                 accept: false,
                 respond: false,
             }),
-        }).then(function () {
+        }).then(() => {
             updateUserInfo(FBauth.currentUser.uid)
         })
 
@@ -380,10 +382,68 @@ export default function App() {
                 accept: false,
                 respond: false,
             }),
-        }).then(function () {
+        }).then(() => {
             updateUserInfo(FBauth.currentUser.uid)
         })
     }
+    //Function remove Guardian in the elderly guardianFollowing list
+    const removeGuardian = async (guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: guardian.id,
+                dob: guardian.dob,
+                phone: guardian.phone,
+                guardianName: guardian.guardianName,
+                nickname: guardian.nickname,
+                accept: guardian.accept,
+                respond: guardian.respond,
+            }),
+        })
+
+        const docGuardian = doc(db, 'Users', guardian.id)
+        const docSnapGuardian = await getDoc(docGuardian)
+        if (docSnapGuardian.exists()) {
+            setGuardianUser({
+                id: guardian.id,
+                ...docSnapGuardian.data(),
+            })
+        }
+    }
+
+    //useEffect as a listener for th variable guardianUser
+    useEffect(() => {
+        guardianUser?.elderlyFollow.map((elderly) => {
+            if (elderly.id === FBauth.currentUser.uid) {
+                console.log('In the guardian map')
+                setElderlyForGuardian(elderly)
+            }
+        })
+    }, [guardianUser])
+
+    //useEffect to delete the elderly in the guardian list when an elderly delete the guardian
+    useEffect(() => {
+        if (elderlyForGuardian.length === undefined) {
+            const docRef = doc(db, 'Users', guardianUser.id)
+            const deleteElderly = async () => {
+                await updateDoc(docRef, {
+                    elderlyFollow: arrayRemove({
+                        id: elderlyForGuardian.id,
+                        dob: elderlyForGuardian.dob,
+                        phone: elderlyForGuardian.phone,
+                        nickname: elderlyForGuardian.nickname,
+                        elderlyName: elderlyForGuardian.elderlyName,
+                        accept: elderlyForGuardian.accept,
+                        respond: elderlyForGuardian.respond,
+                    }),
+                })
+            }
+
+            deleteElderly()
+            setElderlyForGuardian([])
+        }
+    }, [elderlyForGuardian])
+
     return (
         <PaperProvider theme={theme}>
             <NavigationContainer>
@@ -560,6 +620,7 @@ export default function App() {
                                 {...props}
                                 auth={auth}
                                 user={user}
+                                removeGuardian={removeGuardian}
                             />
                         )}
                     </Stack.Screen>
