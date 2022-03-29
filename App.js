@@ -444,6 +444,36 @@ export default function App() {
         }
     }, [elderlyForGuardian])
 
+    //edit guardian nickname in the elderly database
+    const editGuardianNickname = async (nickname, guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: guardian.nickname,
+                guardianName: guardian.guardianName,
+                accept: guardian.accept,
+                respond: guardian.respond,
+            }),
+        })
+
+        await updateDoc(docRef, {
+            guardianFollowing: arrayUnion({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: nickname,
+                guardianName: guardian.guardianName,
+                accept: guardian.accept,
+                respond: guardian.respond,
+            }),
+        }).then(() => {
+            updateUserInfo(FBauth.currentUser.uid)
+        })
+
+        console.log('id: ', guardian, 'nickname: ', nickname)
+    }
+
     return (
         <PaperProvider theme={theme}>
             <NavigationContainer>
@@ -621,6 +651,7 @@ export default function App() {
                                 auth={auth}
                                 user={user}
                                 removeGuardian={removeGuardian}
+                                editGuardianNickname={editGuardianNickname}
                             />
                         )}
                     </Stack.Screen>
