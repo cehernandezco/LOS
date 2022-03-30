@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { StyleSheet, Text, View, Alert } from 'react-native'
 import { SafeAreaView, FlatList } from 'react-native'
 import { Card } from 'react-native-paper'
-import { Button, TextInput } from 'react-native-paper'
+import { Button, TextInput, Title } from 'react-native-paper'
 // import Constants from 'expo-constants'
 
 const handleRemoveGuardian = (data, props) => {
@@ -44,8 +44,10 @@ const Item = ({
     setUpdate,
 }) => (
     <Card mode={'outlined'} style={styles.card}>
-        <Card.Title title={item.guardianName} />
         <Card.Content>
+            <Title style={!item.accept ? { color: 'red' } : { color: 'green' }}>
+                {item.guardianName}
+            </Title>
             {!edit ? (
                 <Text>
                     Nickname: {item.nickname ? item.nickname : 'No nickname'}
@@ -122,7 +124,11 @@ const ListOfGuardiansScreen = (props) => {
         <SafeAreaView style={styles.container}>
             <View style={styles.viewContainer}>
                 <Text style={styles.textTitle}>
-                    List of Guardians following me:
+                    List of{' '}
+                    {props.user.guardianFollowing?.length === 1
+                        ? 'Guardian '
+                        : 'Guardians '}
+                    following me:
                 </Text>
             </View>
             <View style={[styles.viewContainer, styles.viewContainerFlatlist]}>
