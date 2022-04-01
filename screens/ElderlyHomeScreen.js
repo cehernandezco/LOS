@@ -115,7 +115,8 @@ const ElderlyHomeScreen = (props) => {
         Alert.alert('Not yet implemented ', 'Wait for it')
     }
     const goToSettings = () => {
-        Alert.alert('Not yet implemented ', 'Wait for it')
+        navigation.navigate('ElderlySensors', { user: props.user })
+        
     }
 
     return (
