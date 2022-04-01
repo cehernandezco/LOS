@@ -112,7 +112,7 @@ const ElderlyHomeScreen = (props) => {
         }
     }
     const listOfGuardians = () => {
-        Alert.alert('Not yet implemented ', 'Wait for it')
+        navigation.navigate('ListOfGuardians')
     }
     const goToSettings = () => {
         Alert.alert('Not yet implemented ', 'Wait for it')
@@ -167,7 +167,7 @@ const ElderlyHomeScreen = (props) => {
                         style={[styles.buttons]}
                         onPress={() => listOfGuardians()}
                     >
-                        My LIST OF GUARDIANS
+                        My GUARDIANS
                     </Button>
                     <Button
                         mode="contained"

@@ -23,6 +23,9 @@ const RegisterGoogleScreen = (props) => {
     const [loading, setLoading] = useState(false)
 
     useEffect(() => {
+        if (props.userUser) {
+            navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        }
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
         }
