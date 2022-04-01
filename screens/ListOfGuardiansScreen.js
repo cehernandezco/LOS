@@ -33,6 +33,31 @@ const handleRemoveGuardian = (data, props) => {
     )
 }
 
+const handleAcceptGuardian = (data, props) => {
+    // props.removeGuardian(data)
+    Alert.alert(
+        'Confirmation',
+        'Are you sure you want to accept: ' + data.guardianName + '?',
+        [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'OK',
+                onPress: () => {
+                    Alert.alert(
+                        'Guardian accepted',
+                        data.guardianName +
+                            ' has been added to your guardian list.'
+                    )
+                    props.acceptGuardian(data)
+                },
+            },
+        ]
+    )
+}
+
 const Item = ({
     item,
     props,
@@ -83,7 +108,7 @@ const Item = ({
                 {!item.accept ? (
                     <Button
                         onPress={() => {
-                            Alert.alert('Test', 'coucou')
+                            handleAcceptGuardian(item, props)
                         }}
                     >
                         Accept

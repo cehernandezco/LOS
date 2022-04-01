@@ -87,8 +87,10 @@ export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
     const [guardianUser, setGuardianUser] = useState()
+    const [guardianUserAccepted, setGuardianUserAccepted] = useState()
     const [elderlyUsers, setElderlyUsers] = useState([])
     const [elderlyForGuardian, setElderlyForGuardian] = useState([])
+    const [elderlyAcceptGuardian, setElderlyAcceptGuardian] = useState([])
     const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
@@ -369,30 +371,12 @@ export default function App() {
         })
     }
 
-    //Function accept guardianFollowing
-    const acceptGuardian = async (elderlyUser, guardian) => {
-        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
-        await updateDoc(docRef, {
-            guardianFollowing: arrayRemove({
-                id: elderlyUser.id,
-                phone: elderlyUser.phoneNumber,
-                dob: elderlyUser.dob,
-                elderlyName: elderlyUser.firstname + ' ' + elderlyUser.lastname,
-                nickname: null,
-                accept: false,
-                respond: false,
-            }),
-        }).then(() => {
-            updateUserInfo(FBauth.currentUser.uid)
-        })
-    }
     //Function remove Guardian in the elderly guardianFollowing list
     const removeGuardian = async (guardian) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
         await updateDoc(docRef, {
             guardianFollowing: arrayRemove({
                 id: guardian.id,
-                dob: guardian.dob,
                 phone: guardian.phone,
                 guardianName: guardian.guardianName,
                 nickname: guardian.nickname,
@@ -411,11 +395,10 @@ export default function App() {
         }
     }
 
-    //useEffect as a listener for th variable guardianUser
+    //useEffect as a listener for the variable guardianUser
     useEffect(() => {
         guardianUser?.elderlyFollow.map((elderly) => {
             if (elderly.id === FBauth.currentUser.uid) {
-                console.log('In the guardian map')
                 setElderlyForGuardian(elderly)
             }
         })
@@ -444,6 +427,53 @@ export default function App() {
         }
     }, [elderlyForGuardian])
 
+    //useEffect as a listener for the variable guardianUserAccepted
+    useEffect(() => {
+        guardianUserAccepted?.elderlyFollow.map((elderly) => {
+            if (elderly.id === FBauth.currentUser.uid) {
+                setElderlyAcceptGuardian(elderly)
+            }
+        })
+    }, [guardianUserAccepted])
+
+    //useEffect to update the accept status of the Guardian in the guardian list when an elderly accept the guardian
+    useEffect(() => {
+        if (elderlyAcceptGuardian.length === undefined) {
+            const docRef = doc(db, 'Users', guardianUserAccepted.id)
+            const updateAccept = async () => {
+                await updateDoc(docRef, {
+                    elderlyFollow: arrayRemove({
+                        id: elderlyAcceptGuardian.id,
+                        dob: elderlyAcceptGuardian.dob,
+                        phone: elderlyAcceptGuardian.phone,
+                        nickname: elderlyAcceptGuardian.nickname,
+                        elderlyName: elderlyAcceptGuardian.elderlyName,
+                        accept: elderlyAcceptGuardian.accept,
+                        respond: elderlyAcceptGuardian.respond,
+                    }),
+                })
+            }
+
+            const updateAccept2 = async () => {
+                await updateDoc(docRef, {
+                    elderlyFollow: arrayUnion({
+                        id: elderlyAcceptGuardian.id,
+                        dob: elderlyAcceptGuardian.dob,
+                        phone: elderlyAcceptGuardian.phone,
+                        nickname: elderlyAcceptGuardian.nickname,
+                        elderlyName: elderlyAcceptGuardian.elderlyName,
+                        accept: true,
+                        respond: true,
+                    }),
+                })
+            }
+
+            updateAccept()
+            updateAccept2()
+            setElderlyAcceptGuardian([])
+        }
+    }, [elderlyAcceptGuardian])
+
     //edit guardian nickname in the elderly database
     const editGuardianNickname = async (nickname, guardian) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
@@ -467,11 +497,42 @@ export default function App() {
                 accept: guardian.accept,
                 respond: guardian.respond,
             }),
-        }).then(() => {
-            updateUserInfo(FBauth.currentUser.uid)
+        })
+    }
+
+    //elderly accept guardian
+    const acceptGuardian = async (guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: guardian.nickname,
+                guardianName: guardian.guardianName,
+                accept: guardian.accept,
+                respond: guardian.respond,
+            }),
         })
 
-        console.log('id: ', guardian, 'nickname: ', nickname)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayUnion({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: guardian.nickname,
+                guardianName: guardian.guardianName,
+                accept: true,
+                respond: true,
+            }),
+        })
+
+        const docGuardian = doc(db, 'Users', guardian.id)
+        const docSnapGuardian = await getDoc(docGuardian)
+        if (docSnapGuardian.exists()) {
+            setGuardianUserAccepted({
+                id: guardian.id,
+                ...docSnapGuardian.data(),
+            })
+        }
     }
 
     return (
@@ -652,6 +713,7 @@ export default function App() {
                                 user={user}
                                 removeGuardian={removeGuardian}
                                 editGuardianNickname={editGuardianNickname}
+                                acceptGuardian={acceptGuardian}
                             />
                         )}
                     </Stack.Screen>
