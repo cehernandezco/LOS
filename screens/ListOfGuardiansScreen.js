@@ -6,7 +6,11 @@ import { Button, TextInput, Title } from 'react-native-paper'
 // import Constants from 'expo-constants'
 
 const handleNotification = (data, props) => {
-    props.sendPushNotification(data.expoPushToken, 'Test Title')
+    props.sendPushNotification(
+        data.expoPushToken,
+        'Test Title',
+        `${props.user.firstname} ${props.user.lastname} has sent you a message!`
+    )
 }
 
 const handleRemoveGuardian = (data, props) => {

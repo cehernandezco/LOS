@@ -137,12 +137,15 @@ export default function App() {
     }, [])
 
     // Can use this function below, OR use Expo's Push Notification Tool-> https://expo.dev/notifications
-    const sendPushNotification = async (token, title) => {
+    const sendPushNotification = async (token, title, body) => {
+        console.log('Token to send to Push Notification: ', token)
+        console.log('Title to send to Push Notification: ', title)
+        console.log('Body to send to Push Notification: ', body)
         const message = {
             to: token,
             sound: 'default',
             title: title,
-            body: 'And here is the body!',
+            body: body,
             data: { someData: 'goes here' },
         }
 
