@@ -5,6 +5,10 @@ import { Card } from 'react-native-paper'
 import { Button, TextInput, Title } from 'react-native-paper'
 // import Constants from 'expo-constants'
 
+const handleNotification = (data, props) => {
+    props.sendPushNotification(data.expoPushToken, 'Test Title')
+}
+
 const handleRemoveGuardian = (data, props) => {
     // props.removeGuardian(data)
     Alert.alert(
@@ -104,6 +108,9 @@ const Item = ({
                 <Button onPress={() => setEdit(true)}>Edit</Button>
                 <Button onPress={() => handleRemoveGuardian(item, props)}>
                     Delete
+                </Button>
+                <Button onPress={() => handleNotification(item, props)}>
+                    Notification
                 </Button>
                 {!item.accept ? (
                     <Button

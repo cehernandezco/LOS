@@ -112,6 +112,16 @@ const GuardianHomeScreen = (props) => {
                     >
                         search
                     </Button>
+                    <Button
+                        mode="contained"
+                        labelStyle={styles.buttonSearchLabel}
+                        style={styles.buttonSearch}
+                        onPress={async () => {
+                            await props.sendPushNotification()
+                        }}
+                    >
+                        Test notifications
+                    </Button>
                     {filteredData.length > 0 && (
                         <>
                             <View style={styles.elderlyList}>
