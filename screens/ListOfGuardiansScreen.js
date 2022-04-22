@@ -3,13 +3,14 @@ import { StyleSheet, Text, View, Alert } from 'react-native'
 import { SafeAreaView, FlatList } from 'react-native'
 import { Card } from 'react-native-paper'
 import { Button, TextInput, Title } from 'react-native-paper'
+import { sendPushNotification } from '../components/NotificationsCustom'
 // import Constants from 'expo-constants'
 
-const handleNotification = (data, props) => {
-    props.sendPushNotification(
+const handleNotification = (data, title, props, message) => {
+    sendPushNotification(
         data.expoPushToken,
-        'Test Title',
-        `${props.user.firstname} ${props.user.lastname} has sent you a message!`
+        title,
+        `${props.user.firstname} ${props.user.lastname} ${message}`
     )
 }
 
@@ -35,6 +36,12 @@ const handleRemoveGuardian = (data, props) => {
                             ' has been removed from your list.'
                     )
                     props.removeGuardian(data)
+                    handleNotification(
+                        data,
+                        'You have been removed',
+                        props,
+                        'removed you from his guardian list'
+                    )
                 },
             },
         ]
@@ -60,6 +67,12 @@ const handleAcceptGuardian = (data, props) => {
                             ' has been added to your guardian list.'
                     )
                     props.acceptGuardian(data)
+                    handleNotification(
+                        data,
+                        'You have been accepted',
+                        props,
+                        'accepted you to his guardian list'
+                    )
                 },
             },
         ]
@@ -112,9 +125,6 @@ const Item = ({
                 <Button onPress={() => setEdit(true)}>Edit</Button>
                 <Button onPress={() => handleRemoveGuardian(item, props)}>
                     Delete
-                </Button>
-                <Button onPress={() => handleNotification(item, props)}>
-                    Notification
                 </Button>
                 {!item.accept ? (
                     <Button

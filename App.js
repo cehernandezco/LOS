@@ -61,6 +61,7 @@ import * as WebBrowser from 'expo-web-browser'
 //Facebook signin
 import * as Facebook from 'expo-auth-session/providers/facebook'
 import { ResponseType } from 'expo-auth-session'
+//Auth functions
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -85,6 +86,48 @@ const theme = {
     },
 }
 
+//Notifications
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+    }),
+})
+
+async function registerForPushNotificationsAsync() {
+    let token
+    if (Device.isDevice) {
+        const { status: existingStatus } =
+            await Notifications.getPermissionsAsync()
+        let finalStatus = existingStatus
+        if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync()
+            finalStatus = status
+        }
+        if (finalStatus !== 'granted') {
+            alert('Failed to get push token for push notification!')
+            return
+        }
+        token = (await Notifications.getExpoPushTokenAsync()).data
+        console.log(token)
+    } else {
+        alert('Must use physical device for Push Notifications')
+    }
+
+    if (Platform.OS === 'android') {
+        Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+        })
+    }
+
+    return token
+}
+
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
@@ -101,12 +144,11 @@ export default function App() {
     const [selectRoleError, setSelectRoleError] = useState()
     const [guardianAddElderlyError, setGuardianAddElderlyError] = useState()
 
-    //-------------------------Notifications------------------------
     const [expoPushToken, setExpoPushToken] = useState('')
     const [notification, setNotification] = useState(false)
     const notificationListener = useRef()
     const responseListener = useRef()
-
+    //-------------------------Notifications------------------------
     useEffect(() => {
         registerForPushNotificationsAsync().then((token) =>
             setExpoPushToken(token)
@@ -135,62 +177,6 @@ export default function App() {
             )
         }
     }, [])
-
-    // Can use this function below, OR use Expo's Push Notification Tool-> https://expo.dev/notifications
-    const sendPushNotification = async (token, title, body) => {
-        console.log('Token to send to Push Notification: ', token)
-        console.log('Title to send to Push Notification: ', title)
-        console.log('Body to send to Push Notification: ', body)
-        const message = {
-            to: token,
-            sound: 'default',
-            title: title,
-            body: body,
-            data: { someData: 'goes here' },
-        }
-
-        await fetch('https://exp.host/--/api/v2/push/send', {
-            method: 'POST',
-            headers: {
-                Accept: 'application/json',
-                'Accept-encoding': 'gzip, deflate',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(message),
-        })
-    }
-
-    async function registerForPushNotificationsAsync() {
-        let token
-        if (Device.isDevice) {
-            const { status: existingStatus } =
-                await Notifications.getPermissionsAsync()
-            let finalStatus = existingStatus
-            if (existingStatus !== 'granted') {
-                const { status } = await Notifications.requestPermissionsAsync()
-                finalStatus = status
-            }
-            if (finalStatus !== 'granted') {
-                alert('Failed to get push token for push notification!')
-                return
-            }
-            token = (await Notifications.getExpoPushTokenAsync()).data
-            console.log(token)
-        } else {
-            alert('Must use physical device for Push Notifications')
-        }
-
-        if (Platform.OS === 'android') {
-            Notifications.setNotificationChannelAsync('default', {
-                name: 'default',
-                importance: Notifications.AndroidImportance.MAX,
-                vibrationPattern: [0, 250, 250, 250],
-                lightColor: '#FF231F7C',
-            })
-        }
-
-        return token
-    }
 
     //-----------------------end of Push Notification-----------------------
 
@@ -363,6 +349,7 @@ export default function App() {
             admin: false,
             guardian: false,
             elderly: false,
+            expoPushToken: expoPushToken,
         })
     }
 
@@ -436,6 +423,7 @@ export default function App() {
     //Function guardian add an elderly user
     const addElderlyUser = async (elderlyUser) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        console.log(elderlyUser)
         await updateDoc(docRef, {
             elderlyFollow: arrayUnion({
                 id: elderlyUser.id,
@@ -445,6 +433,7 @@ export default function App() {
                 nickname: null,
                 accept: false,
                 respond: false,
+                expoPushToken: elderlyUser.expoPushToken,
             }),
         }).then(() => {
             updateUserInfo(FBauth.currentUser.uid)
@@ -475,6 +464,7 @@ export default function App() {
                 nickname: guardian.nickname,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
 
@@ -511,6 +501,7 @@ export default function App() {
                         elderlyName: elderlyForGuardian.elderlyName,
                         accept: elderlyForGuardian.accept,
                         respond: elderlyForGuardian.respond,
+                        expoPushToken: elderlyForGuardian.expoPushToken,
                     }),
                 })
             }
@@ -543,6 +534,7 @@ export default function App() {
                         elderlyName: elderlyAcceptGuardian.elderlyName,
                         accept: elderlyAcceptGuardian.accept,
                         respond: elderlyAcceptGuardian.respond,
+                        expoPushToken: elderlyAcceptGuardian.expoPushToken,
                     }),
                 })
             }
@@ -557,6 +549,7 @@ export default function App() {
                         elderlyName: elderlyAcceptGuardian.elderlyName,
                         accept: true,
                         respond: true,
+                        expoPushToken: elderlyAcceptGuardian.expoPushToken,
                     }),
                 })
             }
@@ -579,6 +572,7 @@ export default function App() {
                 expoPushToken: guardian.expoPushToken,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
 
@@ -591,6 +585,7 @@ export default function App() {
                 guardianName: guardian.guardianName,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
     }
@@ -762,7 +757,6 @@ export default function App() {
                                 elderlyUsers={elderlyUsers}
                                 error={guardianAddElderlyError}
                                 addElderlyUser={addElderlyUser}
-                                sendPushNotification={sendPushNotification}
                             />
                         )}
                     </Stack.Screen>
@@ -812,7 +806,6 @@ export default function App() {
                                 removeGuardian={removeGuardian}
                                 editGuardianNickname={editGuardianNickname}
                                 acceptGuardian={acceptGuardian}
-                                sendPushNotification={sendPushNotification}
                             />
                         )}
                     </Stack.Screen>
