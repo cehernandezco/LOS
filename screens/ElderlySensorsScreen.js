@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, Component } from 'react'
-import { StyleSheet, Text, View, Alert } from 'react-native'
+import { StyleSheet, Text, View, Alert, Vibration } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView, ScrollView, Image } from 'react-native'
 import {
@@ -8,9 +8,14 @@ import {
     TextInput as TextInputCustom,
 } from 'react-native-paper'
 import Constants from 'expo-constants'
-import { Accelerometer, Gyroscope, Barometer, Magnetometer } from 'expo-sensors'
+import {
+    Accelerometer,
+    Gyroscope,
+    Barometer,
+    Magnetometer,
+    DeviceMotion,
+} from 'expo-sensors'
 import SensorView from '../components/SensorView'
-
 
 const ElderlySensorsScreen = (props) => {
     const [email, setEmail] = useState('')
@@ -26,20 +31,20 @@ const ElderlySensorsScreen = (props) => {
         y: 0,
         z: 0,
     })
-    const availableSensors = {
-        Accelerometer: axis,
-        Gyroscope: axis,
-        Magnetometer: axis,
-        Barometer: ['pressure'],
-    }
-
     
+
     const _slow = () => {
         Accelerometer.setUpdateInterval(1000)
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.setUpdateInterval(1000)
+        }
     }
 
     const _fast = () => {
         Accelerometer.setUpdateInterval(16)
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.setUpdateInterval(16)
+        }
     }
 
     const _subscribe = () => {
@@ -50,6 +55,20 @@ const ElderlySensorsScreen = (props) => {
                 //SensorView('Accelerometer', data)
             })
         )
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.addListener((gravityData) => {
+                if (
+                    Math.abs(gravityData.acceleration.x) > 15 ||
+                    Math.abs(gravityData.acceleration.y) > 15 ||
+                    Math.abs(gravityData.acceleration.z) > 15
+                ) {
+                    Vibration.vibrate(1000)
+                    Alert.alert('We have detected a drop. Are you ok?')
+                    console.log(gravityData)
+                }
+                //console.log(gravityData)
+            })
+        }
     }
 
     const _unsubscribe = () => {
@@ -108,14 +127,13 @@ const ElderlySensorsScreen = (props) => {
                         </Button>
                     </View>
                 </View>
-                
+
                 <View>
                     <Text style={styles.headline}>Accelerometer values</Text>
                     <Text style={styles.text}>
                         x: {x} y: {y} z: {z}
                     </Text>
                 </View>
-                
             </ScrollView>
         </SafeAreaView>
     )
