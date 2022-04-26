@@ -9,27 +9,93 @@ import {
     Image,
     Linking,
     Platform,
+    Vibration,
 } from 'react-native'
 import { Button, TextInput as TextInputCustom } from 'react-native-paper'
 import Constants from 'expo-constants'
 import { useNavigation } from '@react-navigation/native'
 import { AuthError } from 'expo-auth-session'
 import Communications from 'react-native-communications'
+import * as SMS from 'expo-sms'
+import {
+    Accelerometer,
+    Gyroscope,
+    Barometer,
+    Magnetometer,
+    DeviceMotion,
+} from 'expo-sensors'
 
 const ElderlyHomeScreen = (props) => {
     const navigation = useNavigation()
     const [role, setRole] = useState('')
     const [loading, setLoading] = useState(false)
+    const [subscription, setSubscription] = useState(null)
+    const [data, setData] = useState({
+        x: 0,
+        y: 0,
+        z: 0,
+    })
 
     useEffect(() => {
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        } else {
+            _subscribe()
+            _fast()
         }
     }, [props.auth])
 
     useEffect(() => {
         props.error ? Alert.alert('Error selecting a role ', props.error) : null
     }, [props.error])
+
+    const _slow = () => {
+        Accelerometer.setUpdateInterval(1000)
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.setUpdateInterval(1000)
+        }
+    }
+
+    const _fast = () => {
+        Accelerometer.setUpdateInterval(16)
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.setUpdateInterval(16)
+        }
+    }
+
+    const _subscribe = () => {
+        setSubscription(
+            Accelerometer.addListener((accelerometerData) => {
+                //console.log(accelerometerData)
+                setData(accelerometerData)
+                //SensorView('Accelerometer', data)
+            })
+        )
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.addListener((gravityData) => {
+                if (
+                    Math.abs(gravityData.acceleration.x) > 15 ||
+                    Math.abs(gravityData.acceleration.y) > 15 ||
+                    Math.abs(gravityData.acceleration.z) > 15
+                ) {
+                    Vibration.vibrate(1000)
+                    Alert.alert('We have detected a drop. Are you ok?')
+                    console.log(gravityData)
+                }
+                //console.log(gravityData)
+            })
+        }
+    }
+
+    const _unsubscribe = () => {
+        subscription && subscription.remove()
+        setSubscription(null)
+    }
+
+    useEffect(() => {
+        _subscribe()
+        return () => _unsubscribe()
+    }, [])
 
     useEffect(() => {
         // console.log(props.user)
@@ -47,7 +113,22 @@ const ElderlyHomeScreen = (props) => {
         )
     }
     const text = (phone) => {
+        const isAvailable = SMS.isAvailableAsync()
         let now = new Date()
+        const message = 'User: ' + props.user.firstname + ' '
+        props.user.lastname +
+            ' is requesting help at ' +
+            now +
+            ".\n\n This text has been sent from Loved One's Safety (LOS)"
+        console.log('expo-sms')
+        /*if(isAvailable){
+            const { result } = await SMS.sendSMSAsync(
+                [phone],
+                message
+            )
+            console.log(result)
+        }*/
+
         Communications.textWithoutEncoding(
             phone,
             'User: ' +
@@ -115,7 +196,7 @@ const ElderlyHomeScreen = (props) => {
         navigation.navigate('ListOfGuardians')
     }
     const goToSettings = () => {
-        Alert.alert('Not yet implemented ', 'Wait for it')
+        navigation.navigate('ElderlySensors', { user: props.user })
     }
 
     return (
