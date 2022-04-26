@@ -8,6 +8,7 @@ import {
     TextInput as TextInputCustom,
 } from 'react-native-paper'
 import Constants from 'expo-constants'
+import { sendPushNotification } from '../components/NotificationsCustom'
 
 const GuardianHomeScreen = (props) => {
     const [email, setEmail] = useState('')
@@ -46,6 +47,11 @@ const GuardianHomeScreen = (props) => {
         setEmail('')
         setFilteredData([])
         props.addElderlyUser(elderly)
+        sendPushNotification(
+            elderly.expoPushToken,
+            'A guardian add you',
+            `${props.user.firstname} ${props.user.lastname} 'has added you to his elderly list'`
+        )
     }
 
     useEffect(() => {

@@ -13,6 +13,9 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 //React native paper
 import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper'
+//Expo notification
+import * as Notifications from 'expo-notifications'
+import * as Device from 'expo-device'
 //Screens
 import GuardianHomeScreen from './screens/GuardianHomeScreen'
 import LoginScreen from './screens/LoginScreen'
@@ -24,7 +27,7 @@ import SelectRoleScreen from './screens/SelectRoleScreen'
 import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
 import ListOfGuardiansScreen from './screens/ListOfGuardiansScreen'
 //React
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 //firebase
 import { firebaseConfig } from './FirebaseConfig'
 import { initializeApp } from 'firebase/app'
@@ -48,7 +51,6 @@ import {
     query,
     doc,
     getDoc,
-    getDocs,
     updateDoc,
     where,
     onSnapshot,
@@ -59,6 +61,7 @@ import * as WebBrowser from 'expo-web-browser'
 //Facebook signin
 import * as Facebook from 'expo-auth-session/providers/facebook'
 import { ResponseType } from 'expo-auth-session'
+//Auth functions
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -83,6 +86,48 @@ const theme = {
     },
 }
 
+//Notifications
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+    }),
+})
+
+async function registerForPushNotificationsAsync() {
+    let token
+    if (Device.isDevice) {
+        const { status: existingStatus } =
+            await Notifications.getPermissionsAsync()
+        let finalStatus = existingStatus
+        if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync()
+            finalStatus = status
+        }
+        if (finalStatus !== 'granted') {
+            alert('Failed to get push token for push notification!')
+            return
+        }
+        token = (await Notifications.getExpoPushTokenAsync()).data
+        console.log(token)
+    } else {
+        alert('Must use physical device for Push Notifications')
+    }
+
+    if (Platform.OS === 'android') {
+        Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+        })
+    }
+
+    return token
+}
+
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
@@ -98,6 +143,42 @@ export default function App() {
     const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState()
     const [selectRoleError, setSelectRoleError] = useState()
     const [guardianAddElderlyError, setGuardianAddElderlyError] = useState()
+
+    const [expoPushToken, setExpoPushToken] = useState('')
+    const [notification, setNotification] = useState(false)
+    const notificationListener = useRef()
+    const responseListener = useRef()
+    //-------------------------Notifications------------------------
+    useEffect(() => {
+        registerForPushNotificationsAsync().then((token) =>
+            setExpoPushToken(token)
+        )
+
+        // This listener is fired whenever a notification is received while the app is foregrounded
+        notificationListener.current =
+            Notifications.addNotificationReceivedListener((notification) => {
+                setNotification(notification)
+            })
+
+        // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
+        responseListener.current =
+            Notifications.addNotificationResponseReceivedListener(
+                (response) => {
+                    console.log(response)
+                }
+            )
+
+        return () => {
+            Notifications.removeNotificationSubscription(
+                notificationListener.current
+            )
+            Notifications.removeNotificationSubscription(
+                responseListener.current
+            )
+        }
+    }, [])
+
+    //-----------------------end of Push Notification-----------------------
 
     const [requestGoogle, responseGoogle, promptAsyncGoogle] =
         Google.useIdTokenAuthRequest({
@@ -116,22 +197,18 @@ export default function App() {
         })
 
     const updateUserInfo = async (id) => {
-        // console.log('User id: ', userAuth.uid)
-        // const docRef = doc(db, 'Users', id)
-        // const docSnap = await getDoc(docRef)
-        // if (docSnap.exists()) {
-        //     setUser(docSnap.data())
-        //     setAuth(true)
-        //     // console.log('User found and saved')
-        // } else {
-        //     setAuth(true)
-        //     // console.log('No such document!')
-        // }
-
         //realtime snapshot user info
         const docRef = doc(db, 'Users', id)
         onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
+                if (
+                    docSnap.data().expoPushToken === undefined ||
+                    docSnap.data().expoPushToken === null ||
+                    docSnap.data().expoPushToken === ''
+                ) {
+                    updateDoc(docRef, { expoPushToken: expoPushToken })
+                }
+                // console.log('docSnap', docSnap.data())
                 setUser(docSnap.data())
                 setAuth(true)
                 // console.log('User found and saved')
@@ -237,6 +314,7 @@ export default function App() {
                     lastname: lastName,
                     dob: dob,
                     phoneNumber: phoneNumber,
+                    expoPushToken: expoPushToken,
                     elderlyFollow: [],
                     guardianFollowing: [],
                     admin: false,
@@ -271,6 +349,7 @@ export default function App() {
             admin: false,
             guardian: false,
             elderly: false,
+            expoPushToken: expoPushToken,
         })
     }
 
@@ -344,6 +423,7 @@ export default function App() {
     //Function guardian add an elderly user
     const addElderlyUser = async (elderlyUser) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        console.log(elderlyUser)
         await updateDoc(docRef, {
             elderlyFollow: arrayUnion({
                 id: elderlyUser.id,
@@ -353,6 +433,7 @@ export default function App() {
                 nickname: null,
                 accept: false,
                 respond: false,
+                expoPushToken: elderlyUser.expoPushToken,
             }),
         }).then(() => {
             updateUserInfo(FBauth.currentUser.uid)
@@ -364,6 +445,7 @@ export default function App() {
                 id: FBauth.currentUser.uid,
                 phone: user.phoneNumber,
                 guardianName: user.firstname + ' ' + user.lastname,
+                expoPushToken: expoPushToken,
                 nickname: null,
                 accept: false,
                 respond: false,
@@ -382,6 +464,7 @@ export default function App() {
                 nickname: guardian.nickname,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
 
@@ -418,6 +501,7 @@ export default function App() {
                         elderlyName: elderlyForGuardian.elderlyName,
                         accept: elderlyForGuardian.accept,
                         respond: elderlyForGuardian.respond,
+                        expoPushToken: elderlyForGuardian.expoPushToken,
                     }),
                 })
             }
@@ -450,6 +534,7 @@ export default function App() {
                         elderlyName: elderlyAcceptGuardian.elderlyName,
                         accept: elderlyAcceptGuardian.accept,
                         respond: elderlyAcceptGuardian.respond,
+                        expoPushToken: elderlyAcceptGuardian.expoPushToken,
                     }),
                 })
             }
@@ -464,6 +549,7 @@ export default function App() {
                         elderlyName: elderlyAcceptGuardian.elderlyName,
                         accept: true,
                         respond: true,
+                        expoPushToken: elderlyAcceptGuardian.expoPushToken,
                     }),
                 })
             }
@@ -483,8 +569,10 @@ export default function App() {
                 phone: guardian.phone,
                 nickname: guardian.nickname,
                 guardianName: guardian.guardianName,
+                expoPushToken: guardian.expoPushToken,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
 
@@ -493,9 +581,11 @@ export default function App() {
                 id: guardian.id,
                 phone: guardian.phone,
                 nickname: nickname,
+                expoPushToken: guardian.expoPushToken,
                 guardianName: guardian.guardianName,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
     }
@@ -511,6 +601,7 @@ export default function App() {
                 guardianName: guardian.guardianName,
                 accept: guardian.accept,
                 respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
 
@@ -522,6 +613,7 @@ export default function App() {
                 guardianName: guardian.guardianName,
                 accept: true,
                 respond: true,
+                expoPushToken: guardian.expoPushToken,
             }),
         })
 
