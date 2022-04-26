@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "999230706322",
+    "project_id": "loved-one-safety",
+    "storage_bucket": "loved-one-safety.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:999230706322:android:9b6f07e687cf6a0c960c4b",
+        "android_client_info": {
+          "package_name": "com.ganushcorporation.los"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "999230706322-3bn7fit2th0gnvijq276ldvetibrhs9a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA5EBXZZH0Dlu51jvYCpsB35sB1CF0wZ2M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "999230706322-3bn7fit2th0gnvijq276ldvetibrhs9a.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "999230706322-p4vb34ve0at9auvpo9vooq90sm3aodeg.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.ganushcorporation.los"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

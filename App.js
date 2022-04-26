@@ -13,6 +13,9 @@ import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 //React native paper
 import { DefaultTheme, Provider as PaperProvider } from 'react-native-paper'
+//Expo notification
+import * as Notifications from 'expo-notifications'
+import * as Device from 'expo-device'
 //Screens
 import GuardianHomeScreen from './screens/GuardianHomeScreen'
 import LoginScreen from './screens/LoginScreen'
@@ -22,8 +25,9 @@ import RegisterGoogleScreen from './screens/RegisterGoogleScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import SelectRoleScreen from './screens/SelectRoleScreen'
 import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
+import ListOfGuardiansScreen from './screens/ListOfGuardiansScreen'
 //React
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 //firebase
 import { firebaseConfig } from './FirebaseConfig'
 import { initializeApp } from 'firebase/app'
@@ -47,9 +51,9 @@ import {
     query,
     doc,
     getDoc,
-    getDocs,
     updateDoc,
     where,
+    onSnapshot,
 } from 'firebase/firestore'
 //Google signin
 import * as Google from 'expo-auth-session/providers/google'
@@ -57,6 +61,7 @@ import * as WebBrowser from 'expo-web-browser'
 //Facebook signin
 import * as Facebook from 'expo-auth-session/providers/facebook'
 import { ResponseType } from 'expo-auth-session'
+//Auth functions
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -82,10 +87,56 @@ const theme = {
     },
 }
 
+//Notifications
+
+Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+    }),
+})
+
+async function registerForPushNotificationsAsync() {
+    let token
+    if (Device.isDevice) {
+        const { status: existingStatus } =
+            await Notifications.getPermissionsAsync()
+        let finalStatus = existingStatus
+        if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync()
+            finalStatus = status
+        }
+        if (finalStatus !== 'granted') {
+            alert('Failed to get push token for push notification!')
+            return
+        }
+        token = (await Notifications.getExpoPushTokenAsync()).data
+        console.log(token)
+    } else {
+        alert('Must use physical device for Push Notifications')
+    }
+
+    if (Platform.OS === 'android') {
+        Notifications.setNotificationChannelAsync('default', {
+            name: 'default',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+        })
+    }
+
+    return token
+}
+
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
+    const [guardianUser, setGuardianUser] = useState()
+    const [guardianUserAccepted, setGuardianUserAccepted] = useState()
     const [elderlyUsers, setElderlyUsers] = useState([])
+    const [elderlyForGuardian, setElderlyForGuardian] = useState([])
+    const [elderlyAcceptGuardian, setElderlyAcceptGuardian] = useState([])
     const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
@@ -93,6 +144,42 @@ export default function App() {
     const [forgotPasswordSuccess, setForgotPasswordSuccess] = useState()
     const [selectRoleError, setSelectRoleError] = useState()
     const [guardianAddElderlyError, setGuardianAddElderlyError] = useState()
+
+    const [expoPushToken, setExpoPushToken] = useState('')
+    const [notification, setNotification] = useState(false)
+    const notificationListener = useRef()
+    const responseListener = useRef()
+    //-------------------------Notifications------------------------
+    useEffect(() => {
+        registerForPushNotificationsAsync().then((token) =>
+            setExpoPushToken(token)
+        )
+
+        // This listener is fired whenever a notification is received while the app is foregrounded
+        notificationListener.current =
+            Notifications.addNotificationReceivedListener((notification) => {
+                setNotification(notification)
+            })
+
+        // This listener is fired whenever a user taps on or interacts with a notification (works when app is foregrounded, backgrounded, or killed)
+        responseListener.current =
+            Notifications.addNotificationResponseReceivedListener(
+                (response) => {
+                    console.log(response)
+                }
+            )
+
+        return () => {
+            Notifications.removeNotificationSubscription(
+                notificationListener.current
+            )
+            Notifications.removeNotificationSubscription(
+                responseListener.current
+            )
+        }
+    }, [])
+
+    //-----------------------end of Push Notification-----------------------
 
     const [requestGoogle, responseGoogle, promptAsyncGoogle] =
         Google.useIdTokenAuthRequest({
@@ -111,20 +198,27 @@ export default function App() {
         })
 
     const updateUserInfo = async (id) => {
-        // console.log('User id: ', userAuth.uid)
+        //realtime snapshot user info
         const docRef = doc(db, 'Users', id)
-        const docSnap = await getDoc(docRef)
-        if (docSnap.exists()) {
-            setUser(docSnap.data())
-            console.log('User found and saved')
-            setAuth(true)
-        } else {
-            setAuth(true)
-            console.log('No such document!')
-        }
+        onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                if (
+                    docSnap.data().expoPushToken === undefined ||
+                    docSnap.data().expoPushToken === null ||
+                    docSnap.data().expoPushToken === ''
+                ) {
+                    updateDoc(docRef, { expoPushToken: expoPushToken })
+                }
+                // console.log('docSnap', docSnap.data())
+                setUser(docSnap.data())
+                setAuth(true)
+                // console.log('User found and saved')
+            } else {
+                setAuth(true)
+                // console.log('No such document!')
+            }
+        })
     }
-
-    console.log('user', user)
 
     //Listener for authentication state
     useEffect(() => {
@@ -182,25 +276,26 @@ export default function App() {
                 })
         }
     }, [responseFacebook])
-    //useEffect to get elderly user in firebase
+    //useEffect to get elderly user from firebase
     useEffect(() => {
-        if (elderlyUsers.length === 0) {
-            const q = query(
-                collection(db, 'Users'),
-                where('elderly', '==', true)
-            )
-            const getElderlyUsers = async () => {
-                const querySnapshot = await getDocs(q)
+        // console.log('Enter in the elderly useEffect')
+        const q = query(collection(db, 'Users'), where('elderly', '==', true))
+        const unsubscribe = onSnapshot(
+            q,
+            (querySnapshot) => {
                 const users = []
-
                 querySnapshot.forEach((doc) => {
+                    // console.log('doc.data(): ', doc.data())
                     users.push({ id: doc.id, ...doc.data() })
                 })
                 setElderlyUsers(users)
+            },
+            (error) => {
+                console.log('Error getting documents: ', error)
             }
-            getElderlyUsers()
-        }
-    }, [])
+        )
+        // unsubscribe()
+    }, [user])
 
     //Function to signup with email
     const SignupHandler = (
@@ -220,6 +315,9 @@ export default function App() {
                     lastname: lastName,
                     dob: dob,
                     phoneNumber: phoneNumber,
+                    expoPushToken: expoPushToken,
+                    elderlyFollow: [],
+                    guardianFollowing: [],
                     admin: false,
                     guardian: false,
                     elderly: false,
@@ -247,9 +345,12 @@ export default function App() {
             lastname: lastName,
             dob: dob,
             phoneNumber: phoneNumber,
+            elderlyFollow: [],
+            guardianFollowing: [],
             admin: false,
             guardian: false,
             elderly: false,
+            expoPushToken: expoPushToken,
         })
     }
 
@@ -311,9 +412,9 @@ export default function App() {
     //Function to update user
     const updateUser = async (user) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
-        console.log(user)
+        // console.log(user)
         await updateDoc(docRef, user)
-            .then(function () {
+            .then(() => {
                 navigation.reset({ index: 0, routes: [{ name: 'Home' }] })
             })
             .catch((error) => {
@@ -323,11 +424,208 @@ export default function App() {
     //Function guardian add an elderly user
     const addElderlyUser = async (elderlyUser) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        console.log(elderlyUser)
         await updateDoc(docRef, {
-            elderlyFollow: arrayUnion({ id: elderlyUser.id, accept: false }),
-        }).then(function () {
+            elderlyFollow: arrayUnion({
+                id: elderlyUser.id,
+                phone: elderlyUser.phoneNumber,
+                dob: elderlyUser.dob,
+                elderlyName: elderlyUser.firstname + ' ' + elderlyUser.lastname,
+                nickname: null,
+                accept: false,
+                respond: false,
+                expoPushToken: elderlyUser.expoPushToken,
+            }),
+        }).then(() => {
             updateUserInfo(FBauth.currentUser.uid)
         })
+
+        const docRef2 = doc(db, 'Users', elderlyUser.id)
+        await updateDoc(docRef2, {
+            guardianFollowing: arrayUnion({
+                id: FBauth.currentUser.uid,
+                phone: user.phoneNumber,
+                guardianName: user.firstname + ' ' + user.lastname,
+                expoPushToken: expoPushToken,
+                nickname: null,
+                accept: false,
+                respond: false,
+            }),
+        })
+    }
+
+    //Function remove Guardian in the elderly guardianFollowing list
+    const removeGuardian = async (guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: guardian.id,
+                phone: guardian.phone,
+                guardianName: guardian.guardianName,
+                nickname: guardian.nickname,
+                accept: guardian.accept,
+                respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
+            }),
+        })
+
+        const docGuardian = doc(db, 'Users', guardian.id)
+        const docSnapGuardian = await getDoc(docGuardian)
+        if (docSnapGuardian.exists()) {
+            setGuardianUser({
+                id: guardian.id,
+                ...docSnapGuardian.data(),
+            })
+        }
+    }
+
+    //useEffect as a listener for the variable guardianUser
+    useEffect(() => {
+        guardianUser?.elderlyFollow.map((elderly) => {
+            if (elderly.id === FBauth.currentUser.uid) {
+                setElderlyForGuardian(elderly)
+            }
+        })
+    }, [guardianUser])
+
+    //useEffect to delete the elderly in the guardian list when an elderly delete the guardian
+    useEffect(() => {
+        if (elderlyForGuardian.length === undefined) {
+            const docRef = doc(db, 'Users', guardianUser.id)
+            const deleteElderly = async () => {
+                await updateDoc(docRef, {
+                    elderlyFollow: arrayRemove({
+                        id: elderlyForGuardian.id,
+                        dob: elderlyForGuardian.dob,
+                        phone: elderlyForGuardian.phone,
+                        nickname: elderlyForGuardian.nickname,
+                        elderlyName: elderlyForGuardian.elderlyName,
+                        accept: elderlyForGuardian.accept,
+                        respond: elderlyForGuardian.respond,
+                        expoPushToken: elderlyForGuardian.expoPushToken,
+                    }),
+                })
+            }
+
+            deleteElderly()
+            setElderlyForGuardian([])
+        }
+    }, [elderlyForGuardian])
+
+    //useEffect as a listener for the variable guardianUserAccepted
+    useEffect(() => {
+        guardianUserAccepted?.elderlyFollow.map((elderly) => {
+            if (elderly.id === FBauth.currentUser.uid) {
+                setElderlyAcceptGuardian(elderly)
+            }
+        })
+    }, [guardianUserAccepted])
+
+    //useEffect to update the accept status of the Guardian in the guardian list when an elderly accept the guardian
+    useEffect(() => {
+        if (elderlyAcceptGuardian.length === undefined) {
+            const docRef = doc(db, 'Users', guardianUserAccepted.id)
+            const updateAccept = async () => {
+                await updateDoc(docRef, {
+                    elderlyFollow: arrayRemove({
+                        id: elderlyAcceptGuardian.id,
+                        dob: elderlyAcceptGuardian.dob,
+                        phone: elderlyAcceptGuardian.phone,
+                        nickname: elderlyAcceptGuardian.nickname,
+                        elderlyName: elderlyAcceptGuardian.elderlyName,
+                        accept: elderlyAcceptGuardian.accept,
+                        respond: elderlyAcceptGuardian.respond,
+                        expoPushToken: elderlyAcceptGuardian.expoPushToken,
+                    }),
+                })
+            }
+
+            const updateAccept2 = async () => {
+                await updateDoc(docRef, {
+                    elderlyFollow: arrayUnion({
+                        id: elderlyAcceptGuardian.id,
+                        dob: elderlyAcceptGuardian.dob,
+                        phone: elderlyAcceptGuardian.phone,
+                        nickname: elderlyAcceptGuardian.nickname,
+                        elderlyName: elderlyAcceptGuardian.elderlyName,
+                        accept: true,
+                        respond: true,
+                        expoPushToken: elderlyAcceptGuardian.expoPushToken,
+                    }),
+                })
+            }
+
+            updateAccept()
+            updateAccept2()
+            setElderlyAcceptGuardian([])
+        }
+    }, [elderlyAcceptGuardian])
+
+    //edit guardian nickname in the elderly database
+    const editGuardianNickname = async (nickname, guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: guardian.nickname,
+                guardianName: guardian.guardianName,
+                expoPushToken: guardian.expoPushToken,
+                accept: guardian.accept,
+                respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
+            }),
+        })
+
+        await updateDoc(docRef, {
+            guardianFollowing: arrayUnion({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: nickname,
+                expoPushToken: guardian.expoPushToken,
+                guardianName: guardian.guardianName,
+                accept: guardian.accept,
+                respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
+            }),
+        })
+    }
+
+    //elderly accept guardian
+    const acceptGuardian = async (guardian) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            guardianFollowing: arrayRemove({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: guardian.nickname,
+                guardianName: guardian.guardianName,
+                accept: guardian.accept,
+                respond: guardian.respond,
+                expoPushToken: guardian.expoPushToken,
+            }),
+        })
+
+        await updateDoc(docRef, {
+            guardianFollowing: arrayUnion({
+                id: guardian.id,
+                phone: guardian.phone,
+                nickname: guardian.nickname,
+                guardianName: guardian.guardianName,
+                accept: true,
+                respond: true,
+                expoPushToken: guardian.expoPushToken,
+            }),
+        })
+
+        const docGuardian = doc(db, 'Users', guardian.id)
+        const docSnapGuardian = await getDoc(docGuardian)
+        if (docSnapGuardian.exists()) {
+            setGuardianUserAccepted({
+                id: guardian.id,
+                ...docSnapGuardian.data(),
+            })
+        }
     }
 
     return (
@@ -385,6 +683,7 @@ export default function App() {
                             <RegisterGoogleScreen
                                 {...props}
                                 auth={auth}
+                                userUser={user}
                                 user={userGoogle}
                                 error={signupError}
                                 handler={SignupGoogleHandler}
@@ -485,6 +784,7 @@ export default function App() {
                             />
                         )}
                     </Stack.Screen>
+
                     {/* Sensors screen */}
                     <Stack.Screen
                         name="ElderlySensors"
@@ -500,7 +800,7 @@ export default function App() {
                             ),
                         }}
                     >
-                        {(props) => (
+                      {(props) => (
                             <ElderlySensorsScreen
                                 {...props}
                                 auth={auth}
@@ -508,6 +808,32 @@ export default function App() {
                                 elderlyUsers={elderlyUsers}
                                 error={guardianAddElderlyError}
                                 addElderlyUser={addElderlyUser}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* ElderlyHome screen */}
+                    <Stack.Screen
+                        name="ListOfGuardians"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Guardians list',
+                            headerRight: (props) => (
+                                <Signout
+                                    {...props}
+                                    handler={SignoutHandler}
+                                    user={user}
+                                />
+                            ),
+                        }}
+                    >
+                      {(props) => (
+                            <ListOfGuardiansScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                                removeGuardian={removeGuardian}
+                                editGuardianNickname={editGuardianNickname}
+                                acceptGuardian={acceptGuardian}
                             />
                         )}
                     </Stack.Screen>
