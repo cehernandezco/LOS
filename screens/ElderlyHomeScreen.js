@@ -7,6 +7,7 @@ import {
     View,
     Alert,
     Linking,
+    Vibration,
 } from 'react-native'
 import { Button } from 'react-native-paper'
 import Constants from 'expo-constants'
@@ -14,11 +15,20 @@ import { useNavigation } from '@react-navigation/native'
 import Communications from 'react-native-communications'
 import TopBar from '../components/TopBar'
 
+import { Accelerometer, DeviceMotion } from 'expo-sensors'
+
 const ElderlyHomeScreen = (props) => {
     const navigation = useNavigation()
     const [role, setRole] = useState('')
     const [guardianAccepted, setGuardianAccepted] = useState([])
     const [loading, setLoading] = useState(false)
+
+    const [subscription, setSubscription] = useState(null)
+    const [data, setData] = useState({
+        x: 0,
+        y: 0,
+        z: 0,
+    })
 
     useEffect(() => {
         let guardians = []
@@ -34,12 +44,63 @@ const ElderlyHomeScreen = (props) => {
     useEffect(() => {
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
+        } else {
+            _subscribe()
+            _slow()
         }
     }, [props.auth])
 
     useEffect(() => {
         props.error ? Alert.alert('Error selecting a role ', props.error) : null
     }, [props.error])
+
+    const _slow = () => {
+        Accelerometer.setUpdateInterval(1000)
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.setUpdateInterval(1000)
+        }
+    }
+
+    const _fast = () => {
+        Accelerometer.setUpdateInterval(16)
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.setUpdateInterval(16)
+        }
+    }
+
+    const _subscribe = () => {
+        setSubscription(
+            Accelerometer.addListener((accelerometerData) => {
+                //console.log(accelerometerData)
+                setData(accelerometerData)
+                //SensorView('Accelerometer', data)
+            })
+        )
+        if (DeviceMotion.isAvailableAsync()) {
+            DeviceMotion.addListener((gravityData) => {
+                if (
+                    Math.abs(gravityData.acceleration.x) > 15 ||
+                    Math.abs(gravityData.acceleration.y) > 15 ||
+                    Math.abs(gravityData.acceleration.z) > 15
+                ) {
+                    Vibration.vibrate(1000)
+                    Alert.alert('We have detected a drop. Are you ok?')
+                    console.log(gravityData)
+                }
+                //console.log(gravityData)
+            })
+        }
+    }
+
+    const _unsubscribe = () => {
+        subscription && subscription.remove()
+        setSubscription(null)
+    }
+
+    useEffect(() => {
+        _subscribe()
+        return () => _unsubscribe()
+    }, [])
 
     useEffect(() => {
         // console.log(props.user)
@@ -127,7 +188,7 @@ const ElderlyHomeScreen = (props) => {
         navigation.navigate('ListOfGuardians')
     }
     const goToSettings = () => {
-        Alert.alert('Not yet implemented ', 'Wait for it')
+        navigation.navigate('ElderlySensors', { user: props.user })
     }
 
     return (
@@ -182,7 +243,7 @@ const ElderlyHomeScreen = (props) => {
                     >
                         My GUARDIANS
                     </Button>
-                    {/* <Button
+                    <Button
                         mode="contained"
                         labelStyle={[styles.buttonLabel]}
                         color="#000"
@@ -191,7 +252,7 @@ const ElderlyHomeScreen = (props) => {
                         onPress={() => goToSettings()}
                     >
                         SETTINGS
-                    </Button> */}
+                    </Button>
                 </View>
             </ScrollView>
         </SafeAreaView>

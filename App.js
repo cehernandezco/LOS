@@ -30,6 +30,7 @@ import SelectRoleScreen from './screens/SelectRoleScreen'
 import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
 import ListOfGuardiansScreen from './screens/ListOfGuardiansScreen'
 import SettingsScreen from './screens/SettingsScreen'
+import ElderlySensorsScreen from './screens/ElderlySensorsScreen'
 //React
 import React, { useState, useEffect, useRef } from 'react'
 //firebase
@@ -924,6 +925,32 @@ export default function App() {
                                 {...props}
                                 auth={auth}
                                 user={user}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* Sensors screen */}
+                    <Stack.Screen
+                        name="ElderlySensors"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Sensors',
+                            // headerRight: (props) => (
+                            //     <Signout
+                            //         {...props}
+                            //         handler={SignoutHandler}
+                            //         user={user}
+                            //     />
+                            // ),
+                        }}
+                    >
+                        {(props) => (
+                            <ElderlySensorsScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                                elderlyUsers={elderlyUsers}
+                                error={guardianAddElderlyError}
+                                addElderlyUser={addElderlyUser}
                             />
                         )}
                     </Stack.Screen>
