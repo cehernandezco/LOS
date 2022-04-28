@@ -294,9 +294,8 @@ const styles = StyleSheet.create({
 
     resetButtonArea: {
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         width: '100%',
-        marginBottom: 20,
     },
     buttons: {
         width: '100%',
@@ -331,7 +330,6 @@ const styles = StyleSheet.create({
     helpButton: {
         backgroundColor: '#FF0000',
         height: 150,
-        fontSize: 80,
     },
     iconButton: {
         width: 100,
@@ -344,7 +342,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '400',
         color: '#FFF',
-        borderWidth: 0,
     },
     buttonLabelTitle: {
         fontSize: 18,
