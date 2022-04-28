@@ -133,8 +133,8 @@ async function registerForPushNotificationsAsync() {
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
-    const [guardianUser, setGuardianUser] = useState()
-    const [elderlyUser, setElderlyUser] = useState()
+    const [guardianUser, setGuardianUser] = useState('')
+    const [elderlyUser, setElderlyUser] = useState('')
     const [guardianUserAccepted, setGuardianUserAccepted] = useState()
     const [elderlyUsers, setElderlyUsers] = useState([])
     const [elderlyForGuardian, setElderlyForGuardian] = useState([])
@@ -486,11 +486,13 @@ export default function App() {
 
     //useEffect as a listener for the variable guardianUser
     useEffect(() => {
-        guardianUser?.elderlyFollow.map((elderly) => {
-            if (elderly.id === FBauth.currentUser.uid) {
-                setElderlyForGuardian(elderly)
-            }
-        })
+        if (guardianUser) {
+            guardianUser?.elderlyFollow.map((elderly) => {
+                if (elderly.id === FBauth.currentUser.uid) {
+                    setElderlyForGuardian(elderly)
+                }
+            })
+        }
     }, [guardianUser])
 
     //useEffect to delete the elderly in the guardian list when an elderly delete the guardian
@@ -515,6 +517,7 @@ export default function App() {
 
             deleteElderly()
             setElderlyForGuardian([])
+            setGuardianUser('')
         }
     }, [elderlyForGuardian])
 
@@ -665,11 +668,13 @@ export default function App() {
     //useEffect as a listener for the variable elderlyUser
     useEffect(() => {
         //console.log('elderlyUser', elderlyUser)
-        elderlyUser?.guardianFollowing.map((guardian) => {
-            if (guardian.id === FBauth.currentUser.uid) {
-                setGuardianForElderly(guardian)
-            }
-        })
+        if (elderlyUser) {
+            elderlyUser?.guardianFollowing.map((guardian) => {
+                if (guardian.id === FBauth.currentUser.uid) {
+                    setGuardianForElderly(guardian)
+                }
+            })
+        }
     }, [elderlyUser])
 
     //useEffect to delete the guardian in the elderly list when an guardian delete the elderly
@@ -693,6 +698,7 @@ export default function App() {
 
             deleteElderly()
             setGuardianForElderly([])
+            setElderlyUser('')
         }
     }, [guardianForElderly])
     console.log(guardianForElderly)
