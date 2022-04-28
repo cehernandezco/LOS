@@ -496,6 +496,7 @@ export default function App() {
     //useEffect to delete the elderly in the guardian list when an elderly delete the guardian
     useEffect(() => {
         if (elderlyForGuardian.length === undefined) {
+            console.log('In the delete area elderly side')
             const docRef = doc(db, 'Users', guardianUser.id)
             const deleteElderly = async () => {
                 await updateDoc(docRef, {
@@ -637,7 +638,6 @@ export default function App() {
 
     //Function remove Elderly in the guardian elderlyFollow list
     const removeElderly = async (elderly) => {
-        console.log('Current user id : ', FBauth.currentUser.uid)
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
         await updateDoc(docRef, {
             elderlyFollow: arrayRemove({
@@ -664,24 +664,26 @@ export default function App() {
 
     //useEffect as a listener for the variable elderlyUser
     useEffect(() => {
-        elderlyUser?.elderlyFollow.map((guardian) => {
+        //console.log('elderlyUser', elderlyUser)
+        elderlyUser?.guardianFollowing.map((guardian) => {
             if (guardian.id === FBauth.currentUser.uid) {
                 setGuardianForElderly(guardian)
             }
         })
-    }, [guardianUser])
+    }, [elderlyUser])
 
-    //useEffect to delete the elderly in the guardian list when an elderly delete the guardian
+    //useEffect to delete the guardian in the elderly list when an guardian delete the elderly
     useEffect(() => {
+        //console.log(guardianForElderly)
         if (guardianForElderly.length === undefined) {
             const docRef = doc(db, 'Users', elderlyUser.id)
             const deleteElderly = async () => {
                 await updateDoc(docRef, {
-                    elderlyFollow: arrayRemove({
+                    guardianFollowing: arrayRemove({
                         id: guardianForElderly.id,
                         phone: guardianForElderly.phone,
                         nickname: guardianForElderly.nickname,
-                        guardianName: guardianForElderly.gardianName,
+                        guardianName: guardianForElderly.guardianName,
                         accept: guardianForElderly.accept,
                         respond: guardianForElderly.respond,
                         expoPushToken: guardianForElderly.expoPushToken,
@@ -690,9 +692,10 @@ export default function App() {
             }
 
             deleteElderly()
-            setElderlyForGuardian([])
+            setGuardianForElderly([])
         }
-    }, [elderlyForGuardian])
+    }, [guardianForElderly])
+    console.log(guardianForElderly)
 
     //edit guardian nickname in the elderly database
     const editElderlyNickname = async (nickname, elderly) => {
