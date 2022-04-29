@@ -1,8 +1,8 @@
 // Can use this function below, OR use Expo's Push Notification Tool-> https://expo.dev/notifications
 export const sendPushNotification = async (token, title, body) => {
-    //console.log('Token to send to Push Notification: ', token)
-    // console.log('Title to send to Push Notification: ', title)
-    //console.log('Body to send to Push Notification: ', body)
+    console.log('Token to send to Push Notification: ', token)
+    console.log('Title to send to Push Notification: ', title)
+    console.log('Body to send to Push Notification: ', body)
     const message = {
         to: token,
         sound: 'default',

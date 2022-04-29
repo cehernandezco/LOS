@@ -16,6 +16,7 @@ import Communications from 'react-native-communications'
 import TopBar from '../components/TopBar'
 
 import { Accelerometer, DeviceMotion } from 'expo-sensors'
+import { sendPushNotification } from '../components/NotificationsCustom'
 
 const ElderlyHomeScreen = (props) => {
     const navigation = useNavigation()
@@ -83,9 +84,14 @@ const ElderlyHomeScreen = (props) => {
                     Math.abs(gravityData.acceleration.y) > 15 ||
                     Math.abs(gravityData.acceleration.z) > 15
                 ) {
-                    Vibration.vibrate(1000)
-                    Alert.alert('We have detected a drop. Are you ok?')
-                    console.log(gravityData)
+                    // Vibration.vibrate(1000)
+                    // Alert.alert('We have detected a drop. Are you ok?')
+                    // console.log(gravityData)
+                    sendPushNotification(
+                        guardianAccepted[1]?.expoPushToken,
+                        'Elderly fall detected',
+                        `${props.user.firstname} ${props.user.lastname} just fall`
+                    )
                 }
                 //console.log(gravityData)
             })
