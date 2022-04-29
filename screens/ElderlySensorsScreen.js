@@ -31,7 +31,7 @@ const ElderlySensorsScreen = (props) => {
         y: 0,
         z: 0,
     })
-
+    
     const _slow = () => {
         Accelerometer.setUpdateInterval(1000)
         if (DeviceMotion.isAvailableAsync()) {
@@ -133,8 +133,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFF',
         alignItems: 'center',
-
         marginTop: Constants.statusBarHeight,
+
     },
     scrollView: {
         flex: 1,

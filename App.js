@@ -71,6 +71,7 @@ import { ResponseType } from 'expo-auth-session'
 
 WebBrowser.maybeCompleteAuthSession()
 
+
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
 //Firebase initialization
@@ -897,6 +898,33 @@ export default function App() {
                             />
                         )}
                     </Stack.Screen>
+
+                    {/* Sensors screen */}
+                    <Stack.Screen
+                        name="ElderlySensors"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Sensors',
+                            headerRight: (props) => (
+                                <Signout
+                                    {...props}
+                                    handler={SignoutHandler}
+                                    user={user}
+                                />
+                            ),
+                        }}
+                    >
+                      {(props) => (
+                            <ElderlySensorsScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                                elderlyUsers={elderlyUsers}
+                                error={guardianAddElderlyError}
+                                addElderlyUser={addElderlyUser}
+                            />
+                        )}
+                    </Stack.Screen>
                     {/* ElderlyHome screen */}
                     <Stack.Screen
                         name="ListOfGuardians"
@@ -912,7 +940,7 @@ export default function App() {
                             // ),
                         }}
                     >
-                        {(props) => (
+                      {(props) => (
                             <ListOfGuardiansScreen
                                 {...props}
                                 auth={auth}

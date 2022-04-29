@@ -7,6 +7,7 @@ import {
     View,
     Alert,
     Linking,
+    Platform,
     Vibration,
 } from 'react-native'
 import { Button } from 'react-native-paper'
@@ -17,12 +18,26 @@ import TopBar from '../components/TopBar'
 
 import { Accelerometer, DeviceMotion } from 'expo-sensors'
 import { sendPushNotification } from '../components/NotificationsCustom'
+import * as SMS from 'expo-sms'
+import {
+    Accelerometer,
+    Gyroscope,
+    Barometer,
+    Magnetometer,
+    DeviceMotion,
+} from 'expo-sensors'
 
 const ElderlyHomeScreen = (props) => {
     const navigation = useNavigation()
     const [role, setRole] = useState('')
     const [guardianAccepted, setGuardianAccepted] = useState([])
     const [loading, setLoading] = useState(false)
+    const [subscription, setSubscription] = useState(null)
+    const [data, setData] = useState({
+        x: 0,
+        y: 0,
+        z: 0,
+    })
 
     const [subscription, setSubscription] = useState(null)
     const [data, setData] = useState({
@@ -47,7 +62,9 @@ const ElderlyHomeScreen = (props) => {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
         } else {
             _subscribe()
+
             _slow()
+            _fast()
         }
     }, [props.auth])
 
@@ -84,6 +101,7 @@ const ElderlyHomeScreen = (props) => {
                     Math.abs(gravityData.acceleration.y) > 15 ||
                     Math.abs(gravityData.acceleration.z) > 15
                 ) {
+
                     // Vibration.vibrate(1000)
                     // Alert.alert('We have detected a drop. Are you ok?')
                     // console.log(gravityData)
@@ -92,6 +110,9 @@ const ElderlyHomeScreen = (props) => {
                         'Elderly fall detected',
                         `${props.user.firstname} ${props.user.lastname} just fall`
                     )
+                    Vibration.vibrate(1000)
+                    Alert.alert('We have detected a drop. Are you ok?')
+                    console.log(gravityData)
                 }
                 //console.log(gravityData)
             })
@@ -123,6 +144,7 @@ const ElderlyHomeScreen = (props) => {
             </View>
         )
     }
+
     // const text = (phone) => {
     //     let now = new Date()
     //     Communications.textWithoutEncoding(
