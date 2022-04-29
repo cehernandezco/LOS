@@ -1,16 +1,6 @@
-import {
-    getAuth,
-    createUserWithEmailAndPassword,
-    onAuthStateChanged,
-    signInWithEmailAndPassword,
-    signOut,
-    sendPasswordResetEmail,
-    GoogleAuthProvider,
-    FacebookAuthProvider,
-    signInWithCredential,
-} from 'firebase/auth'
+import { FBauth } from '../App'
 
-export const SignoutHandler = ({ FBauth, setAuth, setUser }) => {
+export const SignoutHandler = ({ setAuth, setUser }) => {
     signOut(FBauth)
         .then(() => {
             setAuth(false)

@@ -9,6 +9,7 @@ LogBox.ignoreLogs(['Setting a timer'])
 LogBox.ignoreLogs(['VirtualizedLists should never be nested'])
 LogBox.ignoreLogs(['Possible Unhandled Promise'])
 LogBox.ignoreLogs(['Uncaught Error in snapshot listener'])
+LogBox.ignoreLogs(['Require cycle:'])
 
 import { StatusBar } from 'expo-status-bar'
 //Navigation component
@@ -76,6 +77,8 @@ const Stack = createNativeStackNavigator()
 const app = initializeApp(firebaseConfig)
 const db = initializeFirestore(app, { useFetchStreams: false })
 const FBauth = getAuth()
+
+export { db, FBauth }
 
 //General theme
 const theme = {
@@ -701,7 +704,6 @@ export default function App() {
             setElderlyUser('')
         }
     }, [guardianForElderly])
-    console.log(guardianForElderly)
 
     //edit guardian nickname in the elderly database
     const editElderlyNickname = async (nickname, elderly) => {
@@ -934,6 +936,8 @@ export default function App() {
                                 {...props}
                                 auth={auth}
                                 user={user}
+                                setAuth={setAuth}
+                                setUser={setUser}
                             />
                         )}
                     </Stack.Screen>

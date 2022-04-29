@@ -1,12 +1,10 @@
-import { StyleSheet, Text, View } from 'react-native'
+import { View } from 'react-native'
 import React from 'react'
 import Signout from '../components/Signout'
-//firebase
-import { getAuth, signOut } from 'firebase/auth'
+import { FBauth } from '../App'
+import { signOut } from 'firebase/auth'
 
-const SettingsScreen = (props, { user }) => {
-    const FBauth = getAuth()
-
+const SettingsScreen = (props, { user, setUser, setAuth }) => {
     //Function to signout
     const SignoutHandler = () => {
         signOut(FBauth)
@@ -24,5 +22,3 @@ const SettingsScreen = (props, { user }) => {
 }
 
 export default SettingsScreen
-
-const styles = StyleSheet.create({})
