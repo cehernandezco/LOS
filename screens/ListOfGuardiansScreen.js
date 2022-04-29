@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { StyleSheet, Text, View, Alert } from 'react-native'
 import { SafeAreaView, FlatList } from 'react-native'
-import { Card } from 'react-native-paper'
-import { Button, TextInput, Title } from 'react-native-paper'
+import { Button, TextInput, Title, Card } from 'react-native-paper'
 import { sendPushNotification } from '../components/NotificationsCustom'
 // import Constants from 'expo-constants'
 

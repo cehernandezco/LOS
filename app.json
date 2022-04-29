@@ -1,53 +1,51 @@
 {
-  "expo": {
-    "name": "LOS",
-    "slug": "LOS",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "plugins": [
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/los_logo.png",
-          "sound": true,
-          "colors": "#ffffff"
-        }
-      ]
-    ],
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.ganushcorporation.los",
-      "config": {
-        "googleSignIn": {
-          "reservedClientId": "com.googleusercontent.apps.999230706322-p4vb34ve0at9auvpo9vooq90sm3aodeg"
-        }
-      }
-    },
-    "android": {
-      "googleServicesFile": "./google-services.json",
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
-      },
-      "softwareKeyboardLayoutMode": "pan",
-      "package": "com.ganushcorporation.los"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "description": "Loved One's Safety",
-    "githubUrl": "https://github.com/cehernandezco/LOS"
-  }
+    "expo": {
+        "name": "LOS",
+        "slug": "LOS",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "splash": {
+            "image": "./assets/splash.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff"
+        },
+        "plugins": [
+            [
+                "expo-notifications",
+                {
+                    "icon": "./assets/los_logo.png",
+                    "sound": true,
+                    "colors": "#ffffff"
+                }
+            ]
+        ],
+        "updates": {
+            "fallbackToCacheTimeout": 0
+        },
+        "assetBundlePatterns": ["**/*"],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.ganushcorporation.los",
+            "config": {
+                "googleSignIn": {
+                    "reservedClientId": "com.googleusercontent.apps.999230706322-p4vb34ve0at9auvpo9vooq90sm3aodeg"
+                }
+            }
+        },
+        "android": {
+            "googleServicesFile": "./google-services.json",
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#FFFFFF"
+            },
+            "softwareKeyboardLayoutMode": "pan",
+            "package": "com.ganushcorporation.los"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "description": "Loved One's Safety",
+        "githubUrl": "https://github.com/cehernandezco/LOS"
+    }
 }

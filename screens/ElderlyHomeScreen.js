@@ -6,16 +6,18 @@ import {
     Text,
     View,
     Alert,
-    Image,
     Linking,
     Platform,
     Vibration,
 } from 'react-native'
-import { Button, TextInput as TextInputCustom } from 'react-native-paper'
+import { Button } from 'react-native-paper'
 import Constants from 'expo-constants'
 import { useNavigation } from '@react-navigation/native'
-import { AuthError } from 'expo-auth-session'
 import Communications from 'react-native-communications'
+import TopBar from '../components/TopBar'
+
+import { Accelerometer, DeviceMotion } from 'expo-sensors'
+import { sendPushNotification } from '../components/NotificationsCustom'
 import * as SMS from 'expo-sms'
 import {
     Accelerometer,
@@ -28,6 +30,7 @@ import {
 const ElderlyHomeScreen = (props) => {
     const navigation = useNavigation()
     const [role, setRole] = useState('')
+    const [guardianAccepted, setGuardianAccepted] = useState([])
     const [loading, setLoading] = useState(false)
     const [subscription, setSubscription] = useState(null)
     const [data, setData] = useState({
@@ -36,11 +39,31 @@ const ElderlyHomeScreen = (props) => {
         z: 0,
     })
 
+    const [subscription, setSubscription] = useState(null)
+    const [data, setData] = useState({
+        x: 0,
+        y: 0,
+        z: 0,
+    })
+
+    useEffect(() => {
+        let guardians = []
+        props.user?.guardianFollowing.map((guardian) => {
+            if (guardian.accept) {
+                guardians.push(guardian)
+            }
+        })
+
+        setGuardianAccepted(guardians)
+    }, [])
+
     useEffect(() => {
         if (!props.auth) {
             navigation.reset({ index: 0, routes: [{ name: 'Login' }] })
         } else {
             _subscribe()
+
+            _slow()
             _fast()
         }
     }, [props.auth])
@@ -78,6 +101,15 @@ const ElderlyHomeScreen = (props) => {
                     Math.abs(gravityData.acceleration.y) > 15 ||
                     Math.abs(gravityData.acceleration.z) > 15
                 ) {
+
+                    // Vibration.vibrate(1000)
+                    // Alert.alert('We have detected a drop. Are you ok?')
+                    // console.log(gravityData)
+                    sendPushNotification(
+                        guardianAccepted[1]?.expoPushToken,
+                        'Elderly fall detected',
+                        `${props.user.firstname} ${props.user.lastname} just fall`
+                    )
                     Vibration.vibrate(1000)
                     Alert.alert('We have detected a drop. Are you ok?')
                     console.log(gravityData)
@@ -112,54 +144,42 @@ const ElderlyHomeScreen = (props) => {
             </View>
         )
     }
-    const text = (phone) => {
-        const isAvailable = SMS.isAvailableAsync()
-        let now = new Date()
-        const message = 'User: ' + props.user.firstname + ' '
-        props.user.lastname +
-            ' is requesting help at ' +
-            now +
-            ".\n\n This text has been sent from Loved One's Safety (LOS)"
-        console.log('expo-sms')
-        /*if(isAvailable){
-            const { result } = await SMS.sendSMSAsync(
-                [phone],
-                message
-            )
-            console.log(result)
-        }*/
 
-        Communications.textWithoutEncoding(
-            phone,
-            'User: ' +
-                props.user.firstname +
-                ' is requesting help at ' +
-                now +
-                ".\n\n This text has been sent from Loved One's Safety (LOS)"
-        )
-    }
-    const sendEmail = (email) => {
-        let now = new Date()
-        let elderName = props.user.firstname
-        Communications.email(
-            [
-                'cehernandezco@gmail.com',
-                'spike.ganush@gmail.com',
-                'mazzavillanif@gmail.com',
-            ],
-            null,
-            null,
-            'URGENT! ' + elderName + ' is requesting help',
-            'User: ' +
-                elderName +
-                ' is requesting help at ' +
-                now +
-                ".\n\n This email has been sent from Loved One's Safety (LOS)"
-        )
-    }
+    // const text = (phone) => {
+    //     let now = new Date()
+    //     Communications.textWithoutEncoding(
+    //         phone,
+    //         'User: ' +
+    //             props.user.firstname +
+    //             ' is requesting help at ' +
+    //             now +
+    //             ".\n\n This text has been sent from Loved One's Safety (LOS)"
+    //     )
+    // }
+    // const sendEmail = (email) => {
+    //     let now = new Date()
+    //     let elderName = props.user.firstname
+    //     Communications.email(
+    //         [
+    //             'cehernandezco@gmail.com',
+    //             'spike.ganush@gmail.com',
+    //             'mazzavillanif@gmail.com',
+    //         ],
+    //         null,
+    //         null,
+    //         'URGENT! ' + elderName + ' is requesting help',
+    //         'User: ' +
+    //             elderName +
+    //             ' is requesting help at ' +
+    //             now +
+    //             ".\n\n This email has been sent from Loved One's Safety (LOS)"
+    //     )
+    // }
+
     const call = (phone) => {
         console.log('calling to :' + phone)
-        Communications.phonecall(phone, false)
+        //Communications.phonecall(phone, false)
+        Linking.openURL(`tel:${phone}`)
 
         /*
         let phoneNumber = phone
@@ -202,12 +222,7 @@ const ElderlyHomeScreen = (props) => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.scrollView}>
-                <View style={styles.signinArea}>
-                    <Image
-                        style={styles.logo}
-                        source={require('../assets/los_logo.png')}
-                    />
-                </View>
+                <TopBar />
 
                 <View style={styles.resetButtonArea}>
                     <Button
@@ -216,11 +231,17 @@ const ElderlyHomeScreen = (props) => {
                         color="#000"
                         uppercase={false}
                         style={[styles.buttons, styles.helpButton]}
-                        onPress={() => helpAction('call', '0406406567')}
+                        onPress={() => {
+                            if (guardianAccepted.length > 1) {
+                                helpAction('call', guardianAccepted[0].phone)
+                            } else {
+                                helpAction('call', guardianAccepted[0].phone)
+                            }
+                        }}
                     >
                         HELP
                     </Button>
-                    <Button
+                    {/* <Button
                         mode="contained"
                         labelStyle={[styles.buttonLabel]}
                         color="#000"
@@ -239,7 +260,7 @@ const ElderlyHomeScreen = (props) => {
                         onPress={() => helpAction('email', '0406406567')}
                     >
                         EMAIL GUARDIAN
-                    </Button>
+                    </Button> */}
                     <Button
                         mode="contained"
                         labelStyle={[styles.buttonLabel]}
@@ -274,12 +295,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFF',
         alignItems: 'center',
 
-        // marginTop: Constants.statusBarHeight,
+        marginTop: Constants.statusBarHeight,
     },
     scrollView: {
         flex: 1,
         width: '100%',
-        paddingHorizontal: 70,
+        paddingHorizontal: 20,
     },
     signinArea: {
         alignItems: 'center',
@@ -301,9 +322,8 @@ const styles = StyleSheet.create({
 
     resetButtonArea: {
         alignItems: 'center',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         width: '100%',
-        marginBottom: 20,
     },
     buttons: {
         width: '100%',
@@ -338,7 +358,6 @@ const styles = StyleSheet.create({
     helpButton: {
         backgroundColor: '#FF0000',
         height: 150,
-        fontSize: 80,
     },
     iconButton: {
         width: 100,
@@ -351,7 +370,6 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '400',
         color: '#FFF',
-        borderWidth: 0,
     },
     buttonLabelTitle: {
         fontSize: 18,

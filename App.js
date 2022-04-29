@@ -1,11 +1,15 @@
 //Avoid warning message for AsyncStorage and setTimer
 import { LogBox, Platform } from 'react-native'
 LogBox.ignoreLogs([
-    `AsyncStorage has been extracted from react-native core and will be removed in a future release. It can now be installed and imported from '@react-native-async-storage/async-storage' instead of 'react-native'. See https://github.com/react-native-async-storage/async-storage`,
+    `AsyncStorage has been extracted from react-native core and will be removed in a future release. `,
 ])
 LogBox.ignoreLogs(['Linking requires a build-time setting'])
 
 LogBox.ignoreLogs(['Setting a timer'])
+LogBox.ignoreLogs(['VirtualizedLists should never be nested'])
+LogBox.ignoreLogs(['Possible Unhandled Promise'])
+LogBox.ignoreLogs(['Uncaught Error in snapshot listener'])
+LogBox.ignoreLogs(['Require cycle:'])
 
 import { StatusBar } from 'expo-status-bar'
 //Navigation component
@@ -26,6 +30,8 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen'
 import SelectRoleScreen from './screens/SelectRoleScreen'
 import ElderlyHomeScreen from './screens/ElderlyHomeScreen'
 import ListOfGuardiansScreen from './screens/ListOfGuardiansScreen'
+import SettingsScreen from './screens/SettingsScreen'
+import ElderlySensorsScreen from './screens/ElderlySensorsScreen'
 //React
 import React, { useState, useEffect, useRef } from 'react'
 //firebase
@@ -65,9 +71,6 @@ import { ResponseType } from 'expo-auth-session'
 
 WebBrowser.maybeCompleteAuthSession()
 
-//Signout module
-import Signout from './components/Signout'
-import ElderlySensorsScreen from './screens/ElderlySensorsScreen'
 
 //Const Stack for the screen navigation
 const Stack = createNativeStackNavigator()
@@ -75,6 +78,8 @@ const Stack = createNativeStackNavigator()
 const app = initializeApp(firebaseConfig)
 const db = initializeFirestore(app, { useFetchStreams: false })
 const FBauth = getAuth()
+
+export { db, FBauth }
 
 //General theme
 const theme = {
@@ -114,7 +119,7 @@ async function registerForPushNotificationsAsync() {
         token = (await Notifications.getExpoPushTokenAsync()).data
         console.log(token)
     } else {
-        alert('Must use physical device for Push Notifications')
+        // alert('Must use physical device for Push Notifications')
     }
 
     if (Platform.OS === 'android') {
@@ -132,11 +137,13 @@ async function registerForPushNotificationsAsync() {
 export default function App() {
     const [auth, setAuth] = useState(false)
     const [user, setUser] = useState()
-    const [guardianUser, setGuardianUser] = useState()
+    const [guardianUser, setGuardianUser] = useState('')
+    const [elderlyUser, setElderlyUser] = useState('')
     const [guardianUserAccepted, setGuardianUserAccepted] = useState()
     const [elderlyUsers, setElderlyUsers] = useState([])
     const [elderlyForGuardian, setElderlyForGuardian] = useState([])
     const [elderlyAcceptGuardian, setElderlyAcceptGuardian] = useState([])
+    const [guardianForElderly, setGuardianForElderly] = useState([])
     const [userGoogle, setUserGoogle] = useState()
     const [signupError, setSignupError] = useState()
     const [signinError, setSigninError] = useState()
@@ -235,6 +242,7 @@ export default function App() {
     useEffect(() => {
         if (responseGoogle?.type === 'success') {
             const { id_token } = responseGoogle.params
+            console.log('id_token', id_token)
 
             const credential = GoogleAuthProvider.credential(id_token)
             signInWithCredential(FBauth, credential)
@@ -424,7 +432,7 @@ export default function App() {
     //Function guardian add an elderly user
     const addElderlyUser = async (elderlyUser) => {
         const docRef = doc(db, 'Users', FBauth.currentUser.uid)
-        console.log(elderlyUser)
+        //console.log(elderlyUser)
         await updateDoc(docRef, {
             elderlyFollow: arrayUnion({
                 id: elderlyUser.id,
@@ -450,6 +458,7 @@ export default function App() {
                 nickname: null,
                 accept: false,
                 respond: false,
+                expoPushToken: elderlyUser.expoPushToken,
             }),
         })
     }
@@ -481,16 +490,19 @@ export default function App() {
 
     //useEffect as a listener for the variable guardianUser
     useEffect(() => {
-        guardianUser?.elderlyFollow.map((elderly) => {
-            if (elderly.id === FBauth.currentUser.uid) {
-                setElderlyForGuardian(elderly)
-            }
-        })
+        if (guardianUser) {
+            guardianUser?.elderlyFollow.map((elderly) => {
+                if (elderly.id === FBauth.currentUser.uid) {
+                    setElderlyForGuardian(elderly)
+                }
+            })
+        }
     }, [guardianUser])
 
     //useEffect to delete the elderly in the guardian list when an elderly delete the guardian
     useEffect(() => {
         if (elderlyForGuardian.length === undefined) {
+            console.log('In the delete area elderly side')
             const docRef = doc(db, 'Users', guardianUser.id)
             const deleteElderly = async () => {
                 await updateDoc(docRef, {
@@ -509,6 +521,7 @@ export default function App() {
 
             deleteElderly()
             setElderlyForGuardian([])
+            setGuardianUser('')
         }
     }, [elderlyForGuardian])
 
@@ -628,6 +641,105 @@ export default function App() {
         }
     }
 
+    //--------------------------GuardianHomePageHandler---------------------------------
+
+    //Function remove Elderly in the guardian elderlyFollow list
+    const removeElderly = async (elderly) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            elderlyFollow: arrayRemove({
+                id: elderly.id,
+                dob: elderly.dob,
+                phone: elderly.phone,
+                elderlyName: elderly.elderlyName,
+                nickname: elderly.nickname,
+                accept: elderly.accept,
+                respond: elderly.respond,
+                expoPushToken: elderly.expoPushToken,
+            }),
+        })
+
+        const docElderly = doc(db, 'Users', elderly.id)
+        const docSnapElderly = await getDoc(docElderly)
+        if (docSnapElderly.exists()) {
+            setElderlyUser({
+                id: elderly.id,
+                ...docSnapElderly.data(),
+            })
+        }
+    }
+
+    //useEffect as a listener for the variable elderlyUser
+    useEffect(() => {
+        //console.log('elderlyUser', elderlyUser)
+        if (elderlyUser) {
+            elderlyUser?.guardianFollowing.map((guardian) => {
+                if (guardian.id === FBauth.currentUser.uid) {
+                    setGuardianForElderly(guardian)
+                }
+            })
+        }
+    }, [elderlyUser])
+
+    //useEffect to delete the guardian in the elderly list when an guardian delete the elderly
+    useEffect(() => {
+        //console.log(guardianForElderly)
+        if (guardianForElderly.length === undefined) {
+            const docRef = doc(db, 'Users', elderlyUser.id)
+            const deleteElderly = async () => {
+                await updateDoc(docRef, {
+                    guardianFollowing: arrayRemove({
+                        id: guardianForElderly.id,
+                        phone: guardianForElderly.phone,
+                        nickname: guardianForElderly.nickname,
+                        guardianName: guardianForElderly.guardianName,
+                        accept: guardianForElderly.accept,
+                        respond: guardianForElderly.respond,
+                        expoPushToken: guardianForElderly.expoPushToken,
+                    }),
+                })
+            }
+
+            deleteElderly()
+            setGuardianForElderly([])
+            setElderlyUser('')
+        }
+    }, [guardianForElderly])
+
+    //edit guardian nickname in the elderly database
+    const editElderlyNickname = async (nickname, elderly) => {
+        const docRef = doc(db, 'Users', FBauth.currentUser.uid)
+        await updateDoc(docRef, {
+            elderlyFollow: arrayRemove({
+                id: elderly.id,
+                dob: elderly.dob,
+                phone: elderly.phone,
+                nickname: elderly.nickname,
+                elderlyName: elderly.elderlyName,
+                expoPushToken: elderly.expoPushToken,
+                accept: elderly.accept,
+                respond: elderly.respond,
+                expoPushToken: elderly.expoPushToken,
+            }),
+        })
+
+        await updateDoc(docRef, {
+            elderlyFollow: arrayUnion({
+                id: elderly.id,
+                dob: elderly.dob,
+                phone: elderly.phone,
+                nickname: nickname,
+                elderlyName: elderly.elderlyName,
+                expoPushToken: elderly.expoPushToken,
+                accept: elderly.accept,
+                respond: elderly.respond,
+                expoPushToken: elderly.expoPushToken,
+            }),
+        })
+    }
+
+    //--------------------------/GuardianHomePageHandler---------------------------------
+
     return (
         <PaperProvider theme={theme}>
             <NavigationContainer>
@@ -739,15 +851,15 @@ export default function App() {
                     <Stack.Screen
                         name="GuardianHome"
                         options={{
-                            headerShown: true,
-                            headerTitle: 'Home',
-                            headerRight: (props) => (
-                                <Signout
-                                    {...props}
-                                    handler={SignoutHandler}
-                                    user={user}
-                                />
-                            ),
+                            headerShown: false,
+                            // headerTitle: 'Home',
+                            // headerRight: (props) => (
+                            //     <Signout
+                            //         {...props}
+                            //         handler={SignoutHandler}
+                            //         user={user}
+                            //     />
+                            // ),
                         }}
                     >
                         {(props) => (
@@ -758,6 +870,8 @@ export default function App() {
                                 elderlyUsers={elderlyUsers}
                                 error={guardianAddElderlyError}
                                 addElderlyUser={addElderlyUser}
+                                removeElderly={removeElderly}
+                                editElderlyNickname={editElderlyNickname}
                             />
                         )}
                     </Stack.Screen>
@@ -765,15 +879,15 @@ export default function App() {
                     <Stack.Screen
                         name="ElderlyHome"
                         options={{
-                            headerShown: true,
-                            headerTitle: 'Home',
-                            headerRight: (props) => (
-                                <Signout
-                                    {...props}
-                                    handler={SignoutHandler}
-                                    user={user}
-                                />
-                            ),
+                            headerShown: false,
+                            // headerTitle: 'Home',
+                            // headerRight: (props) => (
+                            //     <Signout
+                            //         {...props}
+                            //         handler={SignoutHandler}
+                            //         user={user}
+                            //     />
+                            // ),
                         }}
                     >
                         {(props) => (
@@ -817,13 +931,13 @@ export default function App() {
                         options={{
                             headerShown: true,
                             headerTitle: 'Guardians list',
-                            headerRight: (props) => (
-                                <Signout
-                                    {...props}
-                                    handler={SignoutHandler}
-                                    user={user}
-                                />
-                            ),
+                            // headerRight: (props) => (
+                            //     <Signout
+                            //         {...props}
+                            //         handler={SignoutHandler}
+                            //         user={user}
+                            //     />
+                            // ),
                         }}
                     >
                       {(props) => (
@@ -834,6 +948,50 @@ export default function App() {
                                 removeGuardian={removeGuardian}
                                 editGuardianNickname={editGuardianNickname}
                                 acceptGuardian={acceptGuardian}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* ElderlyHome screen */}
+                    <Stack.Screen
+                        name="Settings"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Settings',
+                        }}
+                    >
+                        {(props) => (
+                            <SettingsScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                                setAuth={setAuth}
+                                setUser={setUser}
+                            />
+                        )}
+                    </Stack.Screen>
+                    {/* Sensors screen */}
+                    <Stack.Screen
+                        name="ElderlySensors"
+                        options={{
+                            headerShown: true,
+                            headerTitle: 'Sensors',
+                            // headerRight: (props) => (
+                            //     <Signout
+                            //         {...props}
+                            //         handler={SignoutHandler}
+                            //         user={user}
+                            //     />
+                            // ),
+                        }}
+                    >
+                        {(props) => (
+                            <ElderlySensorsScreen
+                                {...props}
+                                auth={auth}
+                                user={user}
+                                elderlyUsers={elderlyUsers}
+                                error={guardianAddElderlyError}
+                                addElderlyUser={addElderlyUser}
                             />
                         )}
                     </Stack.Screen>

@@ -1,14 +1,118 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { StyleSheet, Text, View, Alert } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import {
+    StyleSheet,
+    Text,
+    View,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    FlatList,
+} from 'react-native'
 import { useNavigation } from '@react-navigation/native'
-import { SafeAreaView, ScrollView, Image } from 'react-native'
 import {
     Button,
-    IconButton,
     TextInput as TextInputCustom,
+    Card,
+    Title,
 } from 'react-native-paper'
 import Constants from 'expo-constants'
 import { sendPushNotification } from '../components/NotificationsCustom'
+import TopBar from '../components/TopBar'
+
+const handleNotification = (data, title, props, message) => {
+    sendPushNotification(
+        data.expoPushToken,
+        title,
+        `${props.user.firstname} ${props.user.lastname} ${message}`
+    )
+}
+
+const handleRemoveElderly = (data, props) => {
+    // props.removeElderly(data)
+    Alert.alert(
+        'Confirmation',
+        'Are you sure you want to remove: ' +
+            data.elderlyName +
+            ' from your elderly list?',
+        [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'OK',
+                onPress: () => {
+                    Alert.alert(
+                        'Guardian removed',
+                        'Your elderly: ' +
+                            data.elderlyName +
+                            ' has been removed from your list.'
+                    )
+                    props.removeElderly(data)
+                    handleNotification(
+                        data,
+                        'You have been removed',
+                        props,
+                        'removed you from his elderly list'
+                    )
+                },
+            },
+        ]
+    )
+}
+
+const Item = ({
+    item,
+    props,
+    edit,
+    setEdit,
+    nickname,
+    setNickname,
+    editElderlyNickname,
+    setUpdate,
+    keyExtractor,
+}) => (
+    <Card mode={'outlined'} style={styles.card} key={keyExtractor}>
+        <Card.Content>
+            <Title style={!item.accept ? { color: 'red' } : { color: 'green' }}>
+                {item.elderlyName}
+            </Title>
+            {!edit ? (
+                <Text>
+                    Nickname: {item.nickname ? item.nickname : 'No nickname'}
+                </Text>
+            ) : (
+                <>
+                    <Text>Nickname:</Text>
+                    <TextInputCustom
+                        style={styles.editInput}
+                        value={nickname}
+                        onChangeText={(text) => setNickname(text)}
+                    />
+                    <View style={styles.editView}>
+                        <Button onPress={() => setEdit(false)}>Cancel</Button>
+                        <Button
+                            style={styles.editButton}
+                            onPress={() => {
+                                setUpdate(true)
+                                editElderlyNickname(item)
+                            }}
+                        >
+                            Save
+                        </Button>
+                    </View>
+                </>
+            )}
+            <Text>Phone: {item.phone}</Text>
+            <Card.Actions>
+                <Button onPress={() => setEdit(true)}>Edit</Button>
+                <Button onPress={() => handleRemoveElderly(item, props)}>
+                    Delete
+                </Button>
+            </Card.Actions>
+        </Card.Content>
+    </Card>
+)
 
 const GuardianHomeScreen = (props) => {
     const [email, setEmail] = useState('')
@@ -16,6 +120,10 @@ const GuardianHomeScreen = (props) => {
     const [elderlyUsers, setElderlyUsers] = useState([])
     const navigation = useNavigation()
     const [elderlyInTheList, setElderlyInTheList] = useState(0)
+
+    const [edit, setEdit] = useState(false)
+    const [update, setUpdate] = useState(false)
+    const [nickname, setNickname] = useState('')
 
     useEffect(() => {
         setElderlyUsers(props.elderlyUsers)
@@ -50,7 +158,7 @@ const GuardianHomeScreen = (props) => {
         sendPushNotification(
             elderly.expoPushToken,
             'A guardian add you',
-            `${props.user.firstname} ${props.user.lastname} 'has added you to his elderly list'`
+            `${props.user.firstname} ${props.user.lastname} has added you to his elderly list`
         )
     }
 
@@ -89,17 +197,71 @@ const GuardianHomeScreen = (props) => {
         }
     }, [filteredData])
 
+    const renderItem = ({ item }) => (
+        <Item
+            item={item}
+            props={props}
+            edit={edit}
+            setEdit={setEdit}
+            nickname={nickname}
+            setNickname={setNickname}
+            editElderlyNickname={editElderlyNickname}
+            setUpdate={setUpdate}
+            keyExtractor={item.id}
+        />
+    )
+
+    const editElderlyNickname = (guardian) => {
+        props.editElderlyNickname(nickname, guardian)
+        setNickname('')
+        setEdit(false)
+        setTimeout(() => {
+            setUpdate(false)
+        }, 2000)
+    }
+
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView style={styles.scrollView}>
-                <View style={styles.header}>
-                    <Image
-                        style={styles.logo}
-                        source={require('../assets/los_logo.png')}
-                    />
-                    <IconButton icon="menu" color="#000" size={40} />
-                </View>
+            <ScrollView nestedScrollEnabled={true} style={styles.scrollView}>
+                <TopBar />
                 <View style={styles.emailArea}>
+                    {props.user?.elderlyFollow?.length > 0 ? (
+                        <>
+                            <Text style={styles.text}>
+                                You are following{' '}
+                                {props.user?.elderlyFollow.length} elderly
+                            </Text>
+                            <View
+                                style={[
+                                    styles.viewContainer,
+                                    styles.viewContainerFlatlist,
+                                ]}
+                            >
+                                {update ? (
+                                    <Card mode={'outlined'} style={styles.card}>
+                                        <Card.Title title="Update" />
+                                        <Card.Content>
+                                            <Text>
+                                                We are updating the information
+                                                of your guardian.
+                                            </Text>
+                                        </Card.Content>
+                                    </Card>
+                                ) : (
+                                    <FlatList
+                                        scrollEnabled={false}
+                                        data={props.user?.elderlyFollow}
+                                        renderItem={renderItem}
+                                        keyExtractor={(item) => item.id}
+                                    />
+                                )}
+                            </View>
+                        </>
+                    ) : (
+                        <Text style={styles.text}>
+                            You are not following any elderly
+                        </Text>
+                    )}
                     <TextInputCustom
                         placeholder="Enter email"
                         label="Find elderly by email"
@@ -194,26 +356,31 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#FFF',
-        alignItems: 'center',
+        //alignItems: 'center',
 
-        // marginTop: Constants.statusBarHeight,
+        marginTop: Constants.statusBarHeight,
+    },
+    viewContainer: {
+        width: '100%',
+        padding: 10,
+        margin: 10,
+        borderRadius: 10,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+    },
+    viewContainerFlatlist: {
+        flex: 1,
+        alignContent: 'flex-start',
     },
     scrollView: {
         flex: 1,
         width: '100%',
         paddingHorizontal: 20,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 20,
-    },
-    logo: {
-        width: 151,
-        height: 75,
-        marginBottom: '5%',
-        marginTop: '5%',
     },
     emailArea: {
         alignItems: 'center',
@@ -261,5 +428,26 @@ const styles = StyleSheet.create({
     },
     buttonAddLabel: {
         paddingHorizontal: 30,
+    },
+    card: {
+        width: '100%',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        marginBottom: 10,
+    },
+    editView: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    editInput: {
+        fontSize: 20,
+        fontWeight: 'bold',
     },
 })

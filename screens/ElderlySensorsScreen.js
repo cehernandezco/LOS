@@ -32,7 +32,6 @@ const ElderlySensorsScreen = (props) => {
         z: 0,
     })
     
-
     const _slow = () => {
         Accelerometer.setUpdateInterval(1000)
         if (DeviceMotion.isAvailableAsync()) {
@@ -96,18 +95,6 @@ const ElderlySensorsScreen = (props) => {
     return (
         <SafeAreaView style={styles.container}>
             <ScrollView style={styles.scrollView}>
-                <View style={styles.header}>
-                    <Image
-                        style={styles.logo}
-                        source={require('../assets/los_logo.png')}
-                    />
-                    <IconButton
-                        icon="menu"
-                        color="#000"
-                        size={40}
-                        onPress={() => navigation.openDrawer()}
-                    />
-                </View>
                 <View>
                     <View style={styles.buttonContainer}>
                         <Button
@@ -146,8 +133,8 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#FFF',
         alignItems: 'center',
+        marginTop: Constants.statusBarHeight,
 
-        // marginTop: Constants.statusBarHeight,
     },
     scrollView: {
         flex: 1,
