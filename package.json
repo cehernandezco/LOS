@@ -36,9 +36,7 @@
     "react-native-web": "0.17.1",
     "expo-splash-screen": "~0.14.1",
     "expo-sensors": "~11.1.0",
-    "expo-sms": "~10.1.0",
-    "expo-notifications": "~0.14.0",
-    "expo-device": "~4.1.0",
+    "expo-sms": "~10.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9"
